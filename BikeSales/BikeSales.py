@@ -97,27 +97,49 @@ if __name__ == '__main__':
 
             # detailsName is still a list of web elements.
             # convert this into a list that we can use for comparison
+            keyList = []
+            [keyList.append(detailsName[idx].text) for idx in range(len(detailsName))]
+            valueList = []
+            [valueList.append(detailsValue[idx].text) for idx in range(len(detailsValue))]
+            
+            # remove the duplicate of Engine Capacity from both lists
+            removeIdx = keyList.index('Engine Capacity')
+            del keyList[removeIdx]
+            del valueList[removeIdx]
 
 
             if (pageId > 0 or linkIdx > 0):
                 # check all the keys are the same
-                if (len(datadict.keys()) > len(detailsName)):
+                if (len(datadict.keys()) > len(keyList)):
                     # more keys already in dict
-                    missingNames = list(set(datadict.keys()).symmetric_difference(detailsName))
+                    size = len(datadict['Ref Code'])
+                    missingNames = list(set(datadict.keys()).symmetric_difference(keyList))
                     for newkey in missingNames:
-                        datadict[newkey].append('-')
+                        if newkey in datadict.keys():
+                            datadict[newkey].append('-')
+                        else:
+                            datadict[newkey] = ['-']*size
 
-                elif (len(datadict.keys()) < len(detailsName)):
+                elif (len(datadict.keys()) < len(keyList)):
                     # add more keys to dict
                     size = len(datadict['Ref Code'])
-                    missingNames = list(set(datadict.keys()).symmetric_difference(detailsName))
+                    missingNames = list(set(datadict.keys()).symmetric_difference(keyList))
                     for newkey in missingNames:
                         datadict[newkey] = ['-']*size
                 else:
                     # check the keys are the same
-                    missingNames = list(set(datadict.keys()).symmetric_difference(detailsName))
+                    missingNames = list(set(datadict.keys()).symmetric_difference(keyList))
                     if missingNames:
                         print (pageId, linkIdx, 'Dictionary keys have the same length but different values')
+
+
+            #if (pageId > 0 or linkIdx > 0):
+            #    uniquekeys = list(set(list(datadict.keys()) + keyList))
+            #    size = len(datadict['Ref Code'])
+
+            #    for key in uniquekeys:
+
+
 
 
             #   yes (true): no changes
@@ -134,9 +156,9 @@ if __name__ == '__main__':
             #################################################
        
             # how do we deal with new column values ????
-            for idx in range(len(detailsName)):
-                key = detailsName[idx].text
-                value = detailsValue[idx].text
+            for idx, key in enumerate(keyList):
+                #key = detailsName[idx].text
+                value = valueList[idx]
                 if key in list(datadict.keys()):            
                     datadict[key].append(value)
                 else: 
@@ -145,7 +167,10 @@ if __name__ == '__main__':
             print (pageId, linkIdx, len(detailsName))
         
 
-            
+            if 'URL' in list(datadict.keys()):          
+                datadict['URL'][-1] = bike
+            else: 
+                datadict['URL'] = [bike]
 
 
             # Go back to the previous page to access the next bike link
