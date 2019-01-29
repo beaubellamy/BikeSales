@@ -1,5 +1,7 @@
 
-from time import sleep
+import time
+from datetime import datetime
+import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import selenium.common.exceptions as seleniumException
@@ -19,6 +21,34 @@ def get_Element_Values(element):
 def get_Element_Value(element):
     return element.find_element_by_tag_name('td')
     
+def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
+
+    
+    # check all the keys are the same
+    if (len(dictionary.keys()) > len(list_of_keys)):
+        # more keys already in dict
+        size = len(dictionary['Ref Code'])
+        missingNames = list(set(dictionary.keys()).symmetric_difference(list_of_keys))
+        for newkey in missingNames:
+            if newkey in dictionary.keys():
+                dictionary[newkey].append('-')
+            else:
+                dictionary[newkey] = ['-']*size
+
+    elif (len(dictionary.keys()) < len(list_of_keys)):
+        # add more keys to dict
+        size = len(datadict['Ref Code'])
+        missingNames = list(set(dictionary.keys()).symmetric_difference(list_of_keys))
+        for newkey in missingNames:
+            dictionary[newkey] = ['-']*size
+    else:
+        # check the keys are the same
+        missingNames = list(set(dictionary.keys()).symmetric_difference(list_of_keys))
+        if missingNames:
+            print (pageId, linkIdx, 'Dictionary keys have the same length but different values')
+
+    return dictionary
+
 
 
 if __name__ == '__main__':
@@ -50,17 +80,19 @@ if __name__ == '__main__':
 
 
     #numberOfPages = numberOfBikes / bikesPerPage
+    timing = []
 
-    numberOfPages = 2
+    numberOfPages = 5
     for pageId in range(numberOfPages):
    
-        # Get a link to all the pages
-        pageUrl = sortedBikes+"&offset"+str(pageId*bikesPerPage)
+        # Generalise the link to all the pages
+        pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
         driver.get(pageUrl)
 
         # Get the list of all the bikes on the page
         bikesInPage = driver.find_elements_by_css_selector('.listing-item.standard')
 
+        
         bikeLinks = []
         # Extract the links into a list
         for bike in bikesInPage:
@@ -71,15 +103,15 @@ if __name__ == '__main__':
         # Go to each bike link
         for linkIdx, bike in enumerate(bikeLinks):
             attempt = 0
-    
-            sleep(5)
+            t0 = time.clock()
+
+#            time.sleep(5)
             print ('URL: ',bike)
             driver.get(bike)
-            # Wait for completion
 
             # check access is allowed
             while (attempt < 3 and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
-                sleep(5)
+                time.sleep(5)
                 driver.get(bike)
                 print (attempt)
                 attempt += 1
@@ -87,103 +119,59 @@ if __name__ == '__main__':
             if (driver.find_element_by_tag_name('h1').text == 'Access Denied'):
                 continue
 
-            sleep(5)
+            #time.sleep(5)
 
             # Bike Details section
             details = driver.find_element_by_css_selector('section.component:nth-child(2)')
             detailsName = get_Element_Names(details)
             detailsValue = get_Element_Values(details)
 
-
-            # detailsName is still a list of web elements.
-            # convert this into a list that we can use for comparison
+            # Create a list of the keys and values for the dictionary
             keyList = []
             [keyList.append(detailsName[idx].text) for idx in range(len(detailsName))]
             valueList = []
             [valueList.append(detailsValue[idx].text) for idx in range(len(detailsValue))]
             
-            # remove the duplicate of Engine Capacity from both lists
-            removeIdx = keyList.index('Engine Capacity')
-            del keyList[removeIdx]
-            del valueList[removeIdx]
+            # Remove the duplicate of Engine Capacity from both lists
+            if (keyList.count('Engine Capacity') > 1):
+                removeIdx = keyList.index('Engine Capacity')
+                del keyList[removeIdx]
+                del valueList[removeIdx]
 
 
             if (pageId > 0 or linkIdx > 0):
-                # check all the keys are the same
-                if (len(datadict.keys()) > len(keyList)):
-                    # more keys already in dict
-                    size = len(datadict['Ref Code'])
-                    missingNames = list(set(datadict.keys()).symmetric_difference(keyList))
-                    for newkey in missingNames:
-                        if newkey in datadict.keys():
-                            datadict[newkey].append('-')
-                        else:
-                            datadict[newkey] = ['-']*size
+                datadict = validate_Dictionary_Keys(datadict, keyList)
 
-                elif (len(datadict.keys()) < len(keyList)):
-                    # add more keys to dict
-                    size = len(datadict['Ref Code'])
-                    missingNames = list(set(datadict.keys()).symmetric_difference(keyList))
-                    for newkey in missingNames:
-                        datadict[newkey] = ['-']*size
-                else:
-                    # check the keys are the same
-                    missingNames = list(set(datadict.keys()).symmetric_difference(keyList))
-                    if missingNames:
-                        print (pageId, linkIdx, 'Dictionary keys have the same length but different values')
-
-
-            #if (pageId > 0 or linkIdx > 0):
-            #    uniquekeys = list(set(list(datadict.keys()) + keyList))
-            #    size = len(datadict['Ref Code'])
-
-            #    for key in uniquekeys:
-
-
-
-
-            #   yes (true): no changes
-            # extra keys:
-            #   fill in the previous values
-            # less keys:
-            #   fill in current value
-            
-            # check keys haven't changed
-            #size = len(datadict['Ref Code'])
-            #for key in datadict.keys():
-            #    if (len(datadict[key]) < size):
-            #        datadict[key] = ['-']
-            #################################################
-       
-            # how do we deal with new column values ????
+            # Add the values to the dictionary.
             for idx, key in enumerate(keyList):
-                #key = detailsName[idx].text
                 value = valueList[idx]
                 if key in list(datadict.keys()):            
                     datadict[key].append(value)
                 else: 
                     datadict[key] = [value]
 
-            print (pageId, linkIdx, len(detailsName))
-        
-
+            # Add the reference URL to the dictionary
             if 'URL' in list(datadict.keys()):          
                 datadict['URL'][-1] = bike
             else: 
                 datadict['URL'] = [bike]
 
 
-            # Go back to the previous page to access the next bike link
-            for k in list(datadict.keys()):
-                print(k, len(datadict[k]))
 
+            t1 = time.clock()
+            timing.append(t1-t0)
 
     
         
     
         
 
-
+    print ("Size of the dictionary: ",len(datadict),"; Average time: ",sum(timing)/len(timing))
 
     driver.close()
 
+    bikeFrame = pd.DataFrame.from_dict(datadict,orient='columns')
+    bikeFrame.drop(['Bike Facts','Bike Payment','Need Insurance?','Phone'],axis=1, inplace=True)
+    bikeFrame['Scrape_Date'] = datetime.utcnow().date()
+    
+    bikeFrame.to_csv('..\BikeSalesData.csv')
