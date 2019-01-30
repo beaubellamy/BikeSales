@@ -100,7 +100,7 @@ def get_Number_Of_Pages(webdriver=None, bikesPerPage=12):
 if __name__ == '__main__':
 
     # Read the bikeSales csv file, if it exists
-    filename = '..\BikeSalesData1.csv'
+    filename = '..\BikeSalesData.csv'
     try:
         df = pd.read_csv(filename, sep=',',index_col=0)
         dict = df.to_dict()
@@ -123,7 +123,7 @@ if __name__ == '__main__':
     
 
     chromedriver = configdata.chromedriver
-    bikesPerPage=12
+    bikesPerPage = 12
     sortedBikes = "https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price"
     
     #datadict = {}
@@ -133,7 +133,7 @@ if __name__ == '__main__':
         
     timing = []
 
-    #numberOfPages = get_Number_Of_Pages(webdriver=driver,bikesPerPage)
+    #numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
     numberOfPages = 3
 
     for pageId in range(numberOfPages):
@@ -188,6 +188,9 @@ if __name__ == '__main__':
             ### Check if current Ref Code in existing data; yes, update last seen date and skip to next link
             ### NO: continue with following code
             # ??? what if 'ref Code' isn't in keyList ????
+            if 'Ref Code' not in keyList:
+                continue
+
             currentCode = valueList[keyList.index('Ref Code')]
             
 
