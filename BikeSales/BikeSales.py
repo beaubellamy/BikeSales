@@ -1,5 +1,6 @@
 
 import time
+import math
 from datetime import datetime
 import pandas as pd
 from selenium import webdriver
@@ -10,10 +11,10 @@ import selenium.common.exceptions as seleniumException
 import configdata
 
 def get_Element_Names(element):
-   return element.find_elements_by_tag_name('th')
+    return element.find_elements_by_tag_name('th')
 
 def get_Element_Name(element):
-   return element.find_element_by_tag_name('th')
+    return element.find_element_by_tag_name('th')
 
 def get_Element_Values(element):
     return element.find_elements_by_tag_name('td')
@@ -22,11 +23,27 @@ def get_Element_Value(element):
     return element.find_element_by_tag_name('td')
     
 def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
+    """
+    Validate all the keys in the dictionary with the new list of keys.
 
+    This will add a new key to the dictionary if a new one is encoutnered, the new key will be 
+    populated with default values for previous occurances. If there is a key in the dictionary, 
+    that does not exist in teh new key list, a default value will be used to populate the missing key.
+
+    dictionary: 
+    The dictionary that contains the keys to check and which will be updated.
     
-    # check all the keys are the same
+    list_of_keys: 
+    A list containing strings that will consist of the keys that need to be added to the dictionary.
+
+    """
+
+    # There needs to be at least one key labeled 'Ref Code' in the dictionary
+    if ('Ref Code' not in dictionary.keys()):
+        return None
+
     if (len(dictionary.keys()) > len(list_of_keys)):
-        # more keys already in dict
+        # The size of each list for each key should be the same length
         size = len(dictionary['Ref Code'])
         missingNames = list(set(dictionary.keys()).symmetric_difference(list_of_keys))
         for newkey in missingNames:
@@ -36,8 +53,8 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
                 dictionary[newkey] = ['-']*size
 
     elif (len(dictionary.keys()) < len(list_of_keys)):
-        # add more keys to dict
-        size = len(datadict['Ref Code'])
+        # Add a new key to the dictionary with default values for all previous elements.
+        size = len(dictionary['Ref Code'])
         missingNames = list(set(dictionary.keys()).symmetric_difference(list_of_keys))
         for newkey in missingNames:
             dictionary[newkey] = ['-']*size
@@ -49,40 +66,55 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
 
     return dictionary
 
+def get_Number_Of_Pages(webdriver=None, bikesPerPage=12):
+    """
+    Get the number of pages that will need to be traversed. This will depend on the number 
+    of bikes shown per page.
+
+    webdriver:
+    The driver element of the webpage
+
+    bikePerPage: (default = 12)
+    The number of bikes shown per page.
+    """
+    numberOfBikes = bikesPerPage # default value
+
+    elements = webdriver.find_elements_by_class_name('title')
+    for element in elements:
+        if ("Motorcycles for Sale" in element.text):
+            tokens = element.text.split()
+            for token in tokens:
+                token = token.replace(',','')
+                if (token.isdigit()):
+                    numberOfBikes = float(token)
+                    break
+        
+    # Return the calculated number of pages as an integer
+    return int(math.ceil(numberOfBikes / bikesPerPage))
+
+
+
+
 
 
 if __name__ == '__main__':
 
     chromedriver = configdata.chromedriver
     #baseUrl = "https://www.bikesales.com.au/"
-    bikesPerPage = 12 # assumed constant
+    bikesPerPage=12
     #numberOfBikes = 100 # default value
     sortedBikes = "https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price"
-    #"offsdet"+(pageId*bikesPerPage)
     
     datadict = {}
 
     driver = webdriver.Chrome(chromedriver)
     driver.get(sortedBikes)
-
-    # Add filters
-    # This will be left until last to deal with
-
-    # Figour out how many pages there will be.
-    elements = driver.find_elements_by_class_name('title')
-    for element in elements:
-        if ("Motorcycles for sale" in element.text):
-            tokens = element.split()
-            for token in tokens:
-                token = token.replace(',','')
-                if (token.isdigit()):
-                    numberOfBikes = int(token)
-
-
-    #numberOfPages = numberOfBikes / bikesPerPage
+        
     timing = []
 
-    numberOfPages = 5
+    #numberOfPages = get_Number_Of_Pages(webdriver=driver,bikesPerPage)
+    numberOfPages = 3
+
     for pageId in range(numberOfPages):
    
         # Generalise the link to all the pages
@@ -106,10 +138,10 @@ if __name__ == '__main__':
             t0 = time.clock()
 
 #            time.sleep(5)
-            print ('URL: ',bike)
+            print (pageId, linkIdx,'; URL: ',bike)
             driver.get(bike)
 
-            # check access is allowed
+            # Try again if the connection failed
             while (attempt < 3 and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
                 time.sleep(5)
                 driver.get(bike)
@@ -132,6 +164,13 @@ if __name__ == '__main__':
             valueList = []
             [valueList.append(detailsValue[idx].text) for idx in range(len(detailsValue))]
             
+            # Add the advert description to the lists and process the description text
+            keylist.append('Description')
+            description = details.find_element_by_class_name('description').text
+            description = ' '.join(description[12:-1].replace('\n',' ').split())
+            valueList.append(description)
+
+
             # Remove the duplicate of Engine Capacity from both lists
             if (keyList.count('Engine Capacity') > 1):
                 removeIdx = keyList.index('Engine Capacity')
