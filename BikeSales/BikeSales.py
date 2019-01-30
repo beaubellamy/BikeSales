@@ -99,8 +99,8 @@ def get_Number_Of_Pages(webdriver=None, bikesPerPage=12):
 
 if __name__ == '__main__':
 
+
     chromedriver = configdata.chromedriver
-    #baseUrl = "https://www.bikesales.com.au/"
     bikesPerPage=12
     #numberOfBikes = 100 # default value
     sortedBikes = "https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price"
