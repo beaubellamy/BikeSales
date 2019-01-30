@@ -99,13 +99,34 @@ def get_Number_Of_Pages(webdriver=None, bikesPerPage=12):
 
 if __name__ == '__main__':
 
+    # Read the bikeSales csv file, if it exists
+    filename = '..\BikeSalesData1.csv'
+    try:
+        df = pd.read_csv(filename, sep=',',index_col=0)
+        dict = df.to_dict()
+
+        # Convert the dictionary of dictionary's, to a dictionary of lists.
+        datadict = {}
+        for key in dict.keys():
+            datadict[key] = list(dict[key].values())
+
+        # Extract the existing reference codes
+        dictionaryCodes = datadict['Ref Code']
+
+    except FileNotFoundError:
+        datadict = {}
+        dictionaryCodes = []
+
+
+    
+
+    
 
     chromedriver = configdata.chromedriver
     bikesPerPage=12
-    #numberOfBikes = 100 # default value
     sortedBikes = "https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price"
     
-    datadict = {}
+    #datadict = {}
 
     driver = webdriver.Chrome(chromedriver)
     driver.get(sortedBikes)
@@ -164,8 +185,18 @@ if __name__ == '__main__':
             valueList = []
             [valueList.append(detailsValue[idx].text) for idx in range(len(detailsValue))]
             
+            ### Check if current Ref Code in existing data; yes, update last seen date and skip to next link
+            ### NO: continue with following code
+            # ??? what if 'ref Code' isn't in keyList ????
+            currentCode = valueList[keyList.index('Ref Code')]
+            
+
+            if currentCode in dictionaryCodes:
+                # Skip to next iteration
+                continue
+
             # Add the advert description to the lists and process the description text
-            keylist.append('Description')
+            keyList.append('Description')
             description = details.find_element_by_class_name('description').text
             description = ' '.join(description[12:-1].replace('\n',' ').split())
             valueList.append(description)
@@ -211,6 +242,9 @@ if __name__ == '__main__':
 
     bikeFrame = pd.DataFrame.from_dict(datadict,orient='columns')
     bikeFrame.drop(['Bike Facts','Bike Payment','Need Insurance?','Phone'],axis=1, inplace=True)
-    bikeFrame['Scrape_Date'] = datetime.utcnow().date()
     
-    bikeFrame.to_csv('..\BikeSalesData.csv')
+    bikeFrame['First_Seen'] = datetime.utcnow().date()
+    bikeFrame['Last_Seen'] = datetime.utcnow().date()
+
+    
+    bikeFrame.to_csv(filename)
