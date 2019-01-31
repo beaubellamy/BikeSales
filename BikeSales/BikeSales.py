@@ -129,7 +129,7 @@ if __name__ == '__main__':
     driver.get(sortedBikes)
         
     #numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
-    numberOfPages = 5
+    numberOfPages = 100
 
     for pageId in range(numberOfPages):
    
@@ -156,6 +156,7 @@ if __name__ == '__main__':
                 continue
 
             attempt = 0
+            print (pageId, linkIdx, bike)
             driver.get(bike)
 
             # Try again if the connection failed
@@ -169,7 +170,11 @@ if __name__ == '__main__':
                 continue
 
             # Bike Details section
-            details = driver.find_element_by_css_selector('section.component:nth-child(2)')
+            try: 
+                details = driver.find_element_by_css_selector('section.component:nth-child(2)')
+            except seleniumException.NoSuchElementException:
+                continue
+
             detailsName = get_Element_Names(details)
             detailsValue = get_Element_Values(details)
 
