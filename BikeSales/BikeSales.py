@@ -38,13 +38,13 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
 
     """
 
-    # There needs to be at least one key labeled 'Ref Code' in the dictionary
-    if ('Ref Code' not in dictionary.keys()):
+    # There needs to be at least one key labeled 'URL' in the dictionary
+    if ('URL' not in dictionary.keys()):
         return None
 
     if (len(dictionary.keys()) > len(list_of_keys)):
         # The size of each list for each key should be the same length
-        size = len(dictionary['Ref Code'])
+        size = len(dictionary['URL'])
         missingNames = list(set(dictionary.keys()).symmetric_difference(list_of_keys))
         for newkey in missingNames:
             if newkey in dictionary.keys():
@@ -54,7 +54,7 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
 
     elif (len(dictionary.keys()) < len(list_of_keys)):
         # Add a new key to the dictionary with default values for all previous elements.
-        size = len(dictionary['Ref Code'])
+        size = len(dictionary['URL'])
         missingNames = list(set(dictionary.keys()).symmetric_difference(list_of_keys))
         for newkey in missingNames:
             dictionary[newkey] = ['-']*size
@@ -111,30 +111,25 @@ if __name__ == '__main__':
             datadict[key] = list(dict[key].values())
 
         # Extract the existing reference codes
-        dictionaryCodes = datadict['Ref Code']
+        dictionaryURLs = datadict['URL']
+        file = True
 
     except FileNotFoundError:
         datadict = {}
-        dictionaryCodes = []
+        dictionaryURLs = []
+        file = False
 
-
-    
-
-    
-
+    # Set up the webdriver
     chromedriver = configdata.chromedriver
     bikesPerPage = 12
     sortedBikes = "https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price"
     
-    #datadict = {}
 
     driver = webdriver.Chrome(chromedriver)
     driver.get(sortedBikes)
         
-    timing = []
-
     #numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
-    numberOfPages = 3
+    numberOfPages = 5
 
     for pageId in range(numberOfPages):
    
@@ -155,11 +150,12 @@ if __name__ == '__main__':
 
         # Go to each bike link
         for linkIdx, bike in enumerate(bikeLinks):
-            attempt = 0
-            t0 = time.clock()
 
-#            time.sleep(5)
-            print (pageId, linkIdx,'; URL: ',bike)
+            if bike in dictionaryURLs:
+                # Skip to next iteration
+                continue
+
+            attempt = 0
             driver.get(bike)
 
             # Try again if the connection failed
@@ -172,8 +168,6 @@ if __name__ == '__main__':
             if (driver.find_element_by_tag_name('h1').text == 'Access Denied'):
                 continue
 
-            #time.sleep(5)
-
             # Bike Details section
             details = driver.find_element_by_css_selector('section.component:nth-child(2)')
             detailsName = get_Element_Names(details)
@@ -185,19 +179,6 @@ if __name__ == '__main__':
             valueList = []
             [valueList.append(detailsValue[idx].text) for idx in range(len(detailsValue))]
             
-            ### Check if current Ref Code in existing data; yes, update last seen date and skip to next link
-            ### NO: continue with following code
-            # ??? what if 'ref Code' isn't in keyList ????
-            if 'Ref Code' not in keyList:
-                continue
-
-            currentCode = valueList[keyList.index('Ref Code')]
-            
-
-            if currentCode in dictionaryCodes:
-                # Skip to next iteration
-                continue
-
             # Add the advert description to the lists and process the description text
             keyList.append('Description')
             description = details.find_element_by_class_name('description').text
@@ -211,7 +192,7 @@ if __name__ == '__main__':
                 del keyList[removeIdx]
                 del valueList[removeIdx]
 
-
+            # Make sure the list for each key is the same length
             if (pageId > 0 or linkIdx > 0):
                 datadict = validate_Dictionary_Keys(datadict, keyList)
 
@@ -229,24 +210,19 @@ if __name__ == '__main__':
             else: 
                 datadict['URL'] = [bike]
 
+            # Add the (date of the advert) first seen date
+            if 'First_Seen' in list(datadict.keys()):          
+                datadict['First_Seen'][-1] = datetime.utcnow().date()
+            else: 
+                datadict['First_Seen'] = [datetime.utcnow().date()]
 
-
-            t1 = time.clock()
-            timing.append(t1-t0)
-
-    
-        
-    
-        
-
-    print ("Size of the dictionary: ",len(datadict),"; Average time: ",sum(timing)/len(timing))
+            
 
     driver.close()
 
     bikeFrame = pd.DataFrame.from_dict(datadict,orient='columns')
-    bikeFrame.drop(['Bike Facts','Bike Payment','Need Insurance?','Phone'],axis=1, inplace=True)
+    bikeFrame.drop(['Bike Facts','Bike Payment','Need Insurance?','Phone'],axis=1, inplace=True, errors='ignore')
     
-    bikeFrame['First_Seen'] = datetime.utcnow().date()
     bikeFrame['Last_Seen'] = datetime.utcnow().date()
 
     
