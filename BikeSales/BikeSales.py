@@ -92,8 +92,17 @@ def get_Number_Of_Pages(webdriver=None, bikesPerPage=12):
     # Return the calculated number of pages as an integer
     return int(math.ceil(numberOfBikes / bikesPerPage))
 
+def write_Data_File(dictionary={}, filename='default_file.csv'):
+    """
+    Write the data to file using Pandas dataframe's
+    """
 
+    bikeFrame = pd.DataFrame.from_dict(dictionary,orient='columns')
+    bikeFrame.drop(['Bike Facts','Bike Payment','Need Insurance?','Phone'],axis=1, inplace=True, errors='ignore')
+    
+    bikeFrame['Last_Seen'] = datetime.utcnow().date()
 
+    bikeFrame.to_csv(filename)
 
 
 
@@ -112,13 +121,11 @@ if __name__ == '__main__':
 
         # Extract the existing reference codes
         dictionaryURLs = datadict['URL']
-        file = True
-
+        
     except FileNotFoundError:
         datadict = {}
         dictionaryURLs = []
-        file = False
-
+        
     # Set up the webdriver
     chromedriver = configdata.chromedriver
     bikesPerPage = 12
@@ -128,10 +135,10 @@ if __name__ == '__main__':
     driver = webdriver.Chrome(chromedriver)
     driver.get(sortedBikes)
         
-    #numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
-    numberOfPages = 100
+    numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
+    #numberOfPages = 100
 
-    for pageId in range(numberOfPages):
+    for pageId in range(1000, numberOfPages):
    
         # Generalise the link to all the pages
         pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
@@ -159,15 +166,23 @@ if __name__ == '__main__':
             print (pageId, linkIdx, bike)
             driver.get(bike)
 
-            # Try again if the connection failed
-            while (attempt < 3 and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
-                time.sleep(5)
-                driver.get(bike)
-                print (attempt)
-                attempt += 1
+            try:
+                driver.find_element_by_tag_name('h1')
+                # Try again if the connection failed
+                while (attempt < 3 and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
+                    time.sleep(5)
+                    driver.get(bike)
+                    print (attempt)
+                    attempt += 1
 
-            if (driver.find_element_by_tag_name('h1').text == 'Access Denied'):
+                if (driver.find_element_by_tag_name('h1').text == 'Access Denied'):
+                    continue
+
+            except seleniumException.NoSuchElementException:
+                print('FAILED: ', pageId, linkIdx, bike)
                 continue
+
+            
 
             # Bike Details section
             try: 
@@ -221,14 +236,19 @@ if __name__ == '__main__':
             else: 
                 datadict['First_Seen'] = [datetime.utcnow().date()]
 
-            
+            # Update the file with the last 100 pages of bike data
+            if (pageId % 100) == 0:
+                write_Data_File(dictionary=datadict, filename=filename)
+
 
     driver.close()
 
-    bikeFrame = pd.DataFrame.from_dict(datadict,orient='columns')
-    bikeFrame.drop(['Bike Facts','Bike Payment','Need Insurance?','Phone'],axis=1, inplace=True, errors='ignore')
+    write_Data_File(dictionary=datadict, filename=filename)
+
+    #bikeFrame = pd.DataFrame.from_dict(datadict,orient='columns')
+    #bikeFrame.drop(['Bike Facts','Bike Payment','Need Insurance?','Phone'],axis=1, inplace=True, errors='ignore')
     
-    bikeFrame['Last_Seen'] = datetime.utcnow().date()
+    #bikeFrame['Last_Seen'] = datetime.utcnow().date()
 
     
-    bikeFrame.to_csv(filename)
+    #bikeFrame.to_csv(filename)
