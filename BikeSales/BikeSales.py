@@ -136,9 +136,8 @@ if __name__ == '__main__':
     driver.get(sortedBikes)
         
     numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
-    #numberOfPages = 100
 
-    for pageId in range(1000, numberOfPages):
+    for pageId in range(numberOfPages):
    
         # Generalise the link to all the pages
         pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
@@ -245,10 +244,4 @@ if __name__ == '__main__':
 
     write_Data_File(dictionary=datadict, filename=filename)
 
-    #bikeFrame = pd.DataFrame.from_dict(datadict,orient='columns')
-    #bikeFrame.drop(['Bike Facts','Bike Payment','Need Insurance?','Phone'],axis=1, inplace=True, errors='ignore')
     
-    #bikeFrame['Last_Seen'] = datetime.utcnow().date()
-
-    
-    #bikeFrame.to_csv(filename)
