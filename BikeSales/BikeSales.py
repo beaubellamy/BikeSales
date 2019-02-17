@@ -104,6 +104,29 @@ def write_Data_File(dictionary={}, filename='default_file.csv'):
 
     bikeFrame.to_csv(filename)
 
+def update_firstSeen(datadict={}):
+    """
+    Update the first seen date for each advertisement.
+    """
+
+    if 'First_Seen' in list(datadict.keys()):         
+        datadict['First_Seen'][-1] = datetime.utcnow().date()
+    else:
+        datadict['First_Seen'] = [datetime.utcnow().date()]
+        
+    return datadict
+
+def update_lastSeen(datadict={}):
+    """
+    Update the last seen date for each advertisement.
+    """
+
+    if 'Last_Seen' in list(datadict.keys()):         
+        datadict['Last_Seen'][-1] = datetime.utcnow().date()
+    else:
+        datadict['Last_Seen'] = [datetime.utcnow().date()]
+        
+    return datadict
 
 
 if __name__ == '__main__':
@@ -158,6 +181,8 @@ if __name__ == '__main__':
         for linkIdx, bike in enumerate(bikeLinks):
 
             if bike in dictionaryURLs:
+                # Update the advert last seen date
+                update_lastSeen(datadict)
                 # Skip to next iteration
                 continue
 
@@ -230,10 +255,9 @@ if __name__ == '__main__':
                 datadict['URL'] = [bike]
 
             # Add the (date of the advert) first seen date
-            if 'First_Seen' in list(datadict.keys()):          
-                datadict['First_Seen'][-1] = datetime.utcnow().date()
-            else: 
-                datadict['First_Seen'] = [datetime.utcnow().date()]
+            update_firstSeen(datadict)
+            # Update the advert last seen date
+            update_lastSeen(datadict)
 
             # Update the file with the last 100 pages of bike data
             if (pageId % 100) == 0:
