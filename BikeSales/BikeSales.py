@@ -26,9 +26,9 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
     """
     Validate all the keys in the dictionary with the new list of keys.
 
-    This will add a new key to the dictionary if a new one is encoutnered, the new key will be 
+    This will add a new key to the dictionary if a new one is encountered, the new key will be 
     populated with default values for previous occurances. If there is a key in the dictionary, 
-    that does not exist in teh new key list, a default value will be used to populate the missing key.
+    that does not exist in the new key list, a default value will be used to populate the missing key.
 
     dictionary: 
     The dictionary that contains the keys to check and which will be updated.
