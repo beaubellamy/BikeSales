@@ -21,7 +21,84 @@ def get_Element_Values(element):
 
 def get_Element_Value(element):
     return element.find_element_by_tag_name('td')
+
+def get_Details(element):
+    """
+    Extract the details and their corresponding values from the details tab element.
+    """
+    keys = []
+    values = []
+
+    index = 0
+    while True:
+        index += 1
+        # Using the index, cycle through each child div element
+        try:
+            details = element.find_element_by_xpath('//*[@id="details"]/div['+str(index)+']').text.split('\n')
+            keys.append(details[0])
+            values.append(' '.join(details[1:]))
     
+        except seleniumException.NoSuchElementException as e:
+            # Reached teh end of the children.
+            break
+    
+    return keys, values
+    
+def get_Specifications(elements):
+    """
+    Extract the specification labels and values from the specifications tab element
+    """
+
+    spec = elements.text.split('\n')
+
+    keys = []
+    values = []
+
+    sub_Titles = ['Audio/Visual Communications','Brakes','Chassis & Suspension','Convenience','Dimensions & Weights',
+                  'Electrics', 'Engine','Fuel & Emissions', 'Probationary Plate Status','Safety & Security','Start', 
+                  'Transmission','Wheels & Tyres','Warranty & Servicing']
+    idx = 0
+    while idx < len(spec):
+        key = spec[idx]
+
+        # Ignore label if its one of the sub titles
+        if key not in sub_Titles:
+            keys.append(key)
+            idx+=1
+            values.append(spec[idx])
+        
+        idx+=1
+        
+    return keys, values
+
+def get_Location(element):
+    """
+    Find the location element and extract the values
+    """
+
+    try:
+        location = driver.find_element_by_css_selector('.seller-info.seller-location').text
+    except seleniumException.NoSuchElementException as e:
+        return 'none', 'none', '0000'
+
+    suburb = location.split('\n')
+
+    return get_Suburb_and_Postcode(suburb[2])
+
+def get_Suburb_and_Postcode(loc):
+    """
+    Extract the suburb, state and post code from the location element
+    """
+    
+    location = loc.split(',')
+    suburb = location[0]
+    state_suburb = location[-1].split(' ')
+    state = state_suburb[1]
+    postcode = state_suburb[-1]
+
+    return suburb, state, postcode
+
+
 def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
     """
     Validate all the keys in the dictionary with the new list of keys.
@@ -193,7 +270,7 @@ if __name__ == '__main__':
             try:
                 driver.find_element_by_tag_name('h1')
                 # Try again if the connection failed
-                while (attempt < 3 and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
+                while (attempt < 5 and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
                     time.sleep(5)
                     driver.get(bike)
                     print (attempt)
@@ -206,29 +283,40 @@ if __name__ == '__main__':
                 print('FAILED: ', pageId, linkIdx, bike)
                 continue
 
+            # Details tab
+            details = driver.find_element_by_id('details')
+            keyList, valueList = get_Details(details)
+            
+            # Comments/Description section
+            try:
+                driver.find_element_by_class_name('view-more').click()
+                description = driver.find_element_by_class_name('view-more-target').text
+                description = ' '.join(description.replace('\n',' ').split())
+                
+            except seleniumException.ElementNotVisibleException as e:
+                description = driver.find_element_by_class_name('view-more-target').text
+                description = ' '.join(description.replace('\n',' ').split())
+            
+            except seleniumException.NoSuchElementException as e:
+                description = ''
             
 
-            # Bike Details section
-            try: 
-                details = driver.find_element_by_css_selector('section.component:nth-child(2)')
-            except seleniumException.NoSuchElementException:
-                continue
-
-            detailsName = get_Element_Names(details)
-            detailsValue = get_Element_Values(details)
-
-            # Create a list of the keys and values for the dictionary
-            keyList = []
-            [keyList.append(detailsName[idx].text) for idx in range(len(detailsName))]
-            valueList = []
-            [valueList.append(detailsValue[idx].text) for idx in range(len(detailsValue))]
-            
-            # Add the advert description to the lists and process the description text
             keyList.append('Description')
-            description = details.find_element_by_class_name('description').text
-            description = ' '.join(description[12:-1].replace('\n',' ').split())
             valueList.append(description)
 
+            # Specifications
+            driver.find_element_by_id('specifications-tab').click()
+            time.sleep(2)
+            driver.find_element_by_class_name('features-toggle-collapse').click()
+            specifications = driver.find_element_by_id('specifications')
+            key, values = get_Specifications(specifications)
+            keyList += key
+            valueList += values
+
+            suburb, state, postcode = get_Location(driver)
+
+            keyList += ['Suburb', 'State', 'Postcode']
+            valueList += [suburb, state, postcode]
 
             # Remove the duplicate of Engine Capacity from both lists
             if (keyList.count('Engine Capacity') > 1):
