@@ -262,3 +262,4 @@ __pycache__/
 /BikeSales/configdata.py
 /BikeSalesData.csv
 /BikeSalesData - Copy.csv
+*.csv

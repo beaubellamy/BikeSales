@@ -1,4 +1,5 @@
 
+import sys
 import time
 import math
 from datetime import datetime
@@ -21,6 +22,63 @@ def get_Element_Values(element):
 
 def get_Element_Value(element):
     return element.find_element_by_tag_name('td')
+
+def try_Details(element):
+    idx = 0
+    while idx < 10:
+        try:
+            details = element.find_element_by_id('details')
+            break
+        except:
+            print ("Details Error: ",sys.exc_info()[0])
+
+        idx+=1
+        time.sleep(2)
+
+    if (idx == 10):
+        sys.exit("Failed to find the 'details' element")
+
+    return details
+
+def try_Specifications(element):
+    idx = 0
+    while idx < 10:
+        try:
+            specifications = element.find_element_by_id('specifications-tab')
+            specifications.click()
+            break
+        except:
+            print ("Specifications Error: ",sys.exc_info()[0])
+
+        idx+=1
+        time.sleep(2)
+
+        if (idx == 10):
+            sys.exit("Failed to find the 'specifications-tab' element")
+
+    return
+
+def try_Feature_Toggle(driver):
+
+    idx = 0
+    while idx < 10:
+        try:
+            feature = driver.find_element_by_class_name('features-toggle-collapse')
+            feature.click()
+            break
+        except:
+            print ("Feature Toggle Error: ",sys.exc_info()[0])
+
+        idx+=1
+        time.sleep(2)
+
+    if (idx == 10):
+        sys.exit("Failed to find the 'features-toggle-collapse' element")
+
+    return
+
+
+
 
 def get_Details(element):
     """
@@ -55,8 +113,8 @@ def get_Specifications(elements):
     values = []
 
     sub_Titles = ['Audio/Visual Communications','Brakes','Chassis & Suspension','Convenience','Dimensions & Weights',
-                  'Electrics', 'Engine','Fuel & Emissions', 'Probationary Plate Status','Safety & Security','Start', 
-                  'Transmission','Wheels & Tyres','Warranty & Servicing']
+                  'Electrics', 'Engine','Fuel & Emissions', 'Probationary Plate Status','Safety & Security','Safey & Security',
+                  'Start', 'Transmission','Wheels & Tyres','Warranty & Servicing']
     idx = 0
     while idx < len(spec):
         key = spec[idx]
@@ -193,6 +251,15 @@ def update_firstSeen(datadict={}):
         
     return datadict
 
+def update_firstSeen(datadict, bikeLink):
+    """
+    Update the last seen date for the individual advertisement.
+    """
+    idx = datadict['URL'].index(bikeLink)
+    datadict['First_Seen'][idx] = datetime.utcnow().date()
+    
+    return datadict
+
 def update_lastSeen(datadict={}):
     """
     Update the last seen date for each advertisement.
@@ -204,6 +271,16 @@ def update_lastSeen(datadict={}):
         datadict['Last_Seen'] = [datetime.utcnow().date()]
         
     return datadict
+
+def update_lastSeen(datadict, bikeLink):
+    """
+    Update the last seen date for the individual advertisement.
+    """
+    idx = datadict['URL'].index(bikeLink)
+    datadict['Last_Seen'][idx] = datetime.utcnow().date()
+    
+    return datadict
+
 
 
 if __name__ == '__main__':
@@ -259,7 +336,7 @@ if __name__ == '__main__':
 
             if bike in dictionaryURLs:
                 # Update the advert last seen date
-                update_lastSeen(datadict)
+                update_lastSeen(datadict,bike)
                 # Skip to next iteration
                 continue
 
@@ -284,7 +361,8 @@ if __name__ == '__main__':
                 continue
 
             # Details tab
-            details = driver.find_element_by_id('details')
+            #details = driver.find_element_by_id('details') # try - catch
+            details = try_Details(driver)
             keyList, valueList = get_Details(details)
             
             # Comments/Description section
@@ -305,9 +383,11 @@ if __name__ == '__main__':
             valueList.append(description)
 
             # Specifications
-            driver.find_element_by_id('specifications-tab').click()
-            time.sleep(2)
-            driver.find_element_by_class_name('features-toggle-collapse').click()
+            #driver.find_element_by_id('specifications-tab').click()  # try - catch
+            try_Specifications(driver)
+            #time.sleep(2)
+            #driver.find_element_by_class_name('features-toggle-collapse').click()
+            try_Feature_Toggle(driver)
             specifications = driver.find_element_by_id('specifications')
             key, values = get_Specifications(specifications)
             keyList += key
@@ -343,9 +423,9 @@ if __name__ == '__main__':
                 datadict['URL'] = [bike]
 
             # Add the (date of the advert) first seen date
-            update_firstSeen(datadict)
+            update_firstSeen(datadict, bike)
             # Update the advert last seen date
-            update_lastSeen(datadict)
+            update_lastSeen(datadict,bike)
 
             # Update the file with the last 100 pages of bike data
             if (pageId % 100) == 0:
