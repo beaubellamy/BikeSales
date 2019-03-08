@@ -113,7 +113,7 @@ def get_Specifications(elements):
     values = []
 
     sub_Titles = ['Audio/Visual Communications','Brakes','Chassis & Suspension','Convenience','Dimensions & Weights',
-                  'Electrics', 'Engine','Fuel & Emissions', 'Probationary Plate Status','Safety & Security','Safey & Security',
+                  'Electrics', 'Engine','Fuel & Emissions', 'Instruments & Controls', 'Probationary Plate Status','Safety & Security','Safey & Security',
                   'Start', 'Transmission','Wheels & Tyres','Warranty & Servicing']
     idx = 0
     while idx < len(spec):
@@ -141,7 +141,10 @@ def get_Location(element):
 
     suburb = location.split('\n')
 
-    return get_Suburb_and_Postcode(suburb[2])
+    if (suburb[2] == 'Distance from me?'):
+        return 'none', suburb[1], '0000'
+    else:
+        return get_Suburb_and_Postcode(suburb[2])
 
 def get_Suburb_and_Postcode(loc):
     """
@@ -176,10 +179,10 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
     # There needs to be at least one key labeled 'URL' in the dictionary
     if ('URL' not in dictionary.keys()):
         return None
+    size = len(dictionary['URL'])
 
     if (len(dictionary.keys()) > len(list_of_keys)):
-        # The size of each list for each key should be the same length
-        size = len(dictionary['URL'])
+        # The size of each list for each key should be the same length        
         missingNames = list(set(dictionary.keys()).symmetric_difference(list_of_keys))
         for newkey in missingNames:
             if newkey in dictionary.keys():
@@ -189,7 +192,6 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
 
     elif (len(dictionary.keys()) < len(list_of_keys)):
         # Add a new key to the dictionary with default values for all previous elements.
-        size = len(dictionary['URL'])
         missingNames = list(set(dictionary.keys()).symmetric_difference(list_of_keys))
         for newkey in missingNames:
             dictionary[newkey] = ['-']*size
@@ -198,6 +200,11 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
         missingNames = list(set(dictionary.keys()).symmetric_difference(list_of_keys))
         if missingNames:
             print (pageId, linkIdx, 'Dictionary keys have the same length but different values')
+
+    for key in dictionary.keys():
+        if (len(dictionary[key]) < size):            
+            dictionary[key] = (['-']*(size-1))+dictionary[key]
+
 
     return dictionary
 
@@ -238,19 +245,7 @@ def write_Data_File(dictionary={}, filename='default_file.csv'):
     bikeFrame['Last_Seen'] = datetime.utcnow().date()
 
     bikeFrame.to_csv(filename)
-
-def update_firstSeen(datadict={}):
-    """
-    Update the first seen date for each advertisement.
-    """
-
-    if 'First_Seen' in list(datadict.keys()):         
-        datadict['First_Seen'][-1] = datetime.utcnow().date()
-    else:
-        datadict['First_Seen'] = [datetime.utcnow().date()]
-        
-    return datadict
-
+    
 def update_firstSeen(datadict, bikeLink):
     """
     Update the last seen date for the individual advertisement.
@@ -258,22 +253,10 @@ def update_firstSeen(datadict, bikeLink):
     idx = datadict['URL'].index(bikeLink)
     
     if 'First_Seen' in list(datadict.keys()):
-        datadict['First_Seen'][idx] = datetime.utcnow().date()
+        datadict['First_Seen'].append(datetime.utcnow().date())
     else:
         datadict['First_Seen'] = [datetime.utcnow().date()]
 
-    return datadict
-
-def update_lastSeen(datadict={}):
-    """
-    Update the last seen date for each advertisement.
-    """
-
-    if 'Last_Seen' in list(datadict.keys()):         
-        datadict['Last_Seen'][-1] = datetime.utcnow().date()
-    else:
-        datadict['Last_Seen'] = [datetime.utcnow().date()]
-        
     return datadict
 
 def update_lastSeen(datadict, bikeLink):
@@ -283,7 +266,7 @@ def update_lastSeen(datadict, bikeLink):
     idx = datadict['URL'].index(bikeLink)
     
     if 'Last_Seen' in list(datadict.keys()):
-        datadict['Last_Seen'][idx] = datetime.utcnow().date()
+        datadict['Last_Seen'].append(datetime.utcnow().date())
     else:
         datadict['Last_Seen'] = [datetime.utcnow().date()]
 
@@ -397,6 +380,7 @@ if __name__ == '__main__':
             #time.sleep(2)
             #driver.find_element_by_class_name('features-toggle-collapse').click()
             try_Feature_Toggle(driver)
+            time.sleep(2)
             specifications = driver.find_element_by_id('specifications')
             key, values = get_Specifications(specifications)
             keyList += key
@@ -413,10 +397,7 @@ if __name__ == '__main__':
                 del keyList[removeIdx]
                 del valueList[removeIdx]
 
-            # Make sure the list for each key is the same length
-            if (pageId > 0 or linkIdx > 0):
-                datadict = validate_Dictionary_Keys(datadict, keyList)
-
+           
             # Add the values to the dictionary.
             for idx, key in enumerate(keyList):
                 value = valueList[idx]
@@ -427,7 +408,7 @@ if __name__ == '__main__':
 
             # Add the reference URL to the dictionary
             if 'URL' in list(datadict.keys()):          
-                datadict['URL'][-1] = bike
+                datadict['URL'].append(bike)
             else: 
                 datadict['URL'] = [bike]
 
@@ -435,6 +416,12 @@ if __name__ == '__main__':
             update_firstSeen(datadict, bike)
             # Update the advert last seen date
             update_lastSeen(datadict,bike)
+            keyList += ['URL','First_Seen','Last_Seen']
+
+            # Make sure the list for each key is the same length
+            if (pageId > 0 or linkIdx > 0):
+                datadict = validate_Dictionary_Keys(datadict, keyList)
+
 
             # Update the file with the last 100 pages of bike data
             if (pageId % 100) == 0:
