@@ -258,7 +258,10 @@ def update_firstSeen(datadict, bikeLink):
     idx = datadict['URL'].index(bikeLink)
     
     if 'First_Seen' in list(datadict.keys()):
-        datadict['First_Seen'].append(datetime.utcnow().date())
+        if (idx < len(datadict['First_Seen'])):
+            datadict['First_Seen'][idx] = datetime.utcnow().date()
+        else:
+            datadict['First_Seen'].append(datetime.utcnow().date())
     else:
         datadict['First_Seen'] = [datetime.utcnow().date()]
 
@@ -271,11 +274,13 @@ def update_lastSeen(datadict, bikeLink):
     idx = datadict['URL'].index(bikeLink)
     
     if 'Last_Seen' in list(datadict.keys()):
-        datadict['Last_Seen'].append(datetime.utcnow().date())
+        if (idx < len(datadict['Last_Seen'])):
+            datadict['Last_Seen'][idx] = datetime.utcnow().date()
+        else:
+            datadict['Last_Seen'].append(datetime.utcnow().date())
     else:
         datadict['Last_Seen'] = [datetime.utcnow().date()]
 
-    return datadict
     return datadict
 
 
