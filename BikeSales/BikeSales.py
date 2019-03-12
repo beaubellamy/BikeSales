@@ -30,6 +30,8 @@ def try_Details(element):
         try:
             details = element.find_element_by_id('details')
             break
+        except seleniumException.ElementNotVisibleException as e:
+            continue
         except:
             print ("Details Error: ",sys.exc_info()[0])
 
@@ -41,44 +43,44 @@ def try_Details(element):
 
     return details
 
-def try_Specifications(element):
-    idx = 0
-    while idx < 10:
-        try:
-            specifications = element.find_element_by_id('specifications-tab')
-            specifications.click()
-            break
-        except:
-            print ("Specifications Error: ",sys.exc_info()[0])
+#def try_Specifications(element):
+#    idx = 0
+#    while idx < 10:
+#        try:
+#            specifications = element.find_element_by_id('specifications-tab')
+#            specifications.click()
+#            break
+#        except:
+#            print ("Specifications Error: ",sys.exc_info()[0])
 
-        idx+=1
-        time.sleep(2)
+#        idx+=1
+#        time.sleep(2)
 
-        if (idx == 10):
-            sys.exit("Failed to find the 'specifications-tab' element")
+#        if (idx == 10):
+#            sys.exit("Failed to find the 'specifications-tab' element")
 
-    return
+#    return
 
-def try_Feature_Toggle(driver):
+#def try_Feature_Toggle(driver):
 
-    idx = 0
-    while idx < 10:
-        try:
-            feature = driver.find_element_by_class_name('features-toggle-collapse')
-            feature.click()
-            break
-        except seleniumException.ElementNotVisibleException as e:
-            continue
-        except:
-            print ("Feature Toggle Error: ",sys.exc_info()[0])
+#    idx = 0
+#    while idx < 10:
+#        try:
+#            feature = driver.find_element_by_class_name('features-toggle-collapse')
+#            feature.click()
+#            break
+#        except seleniumException.ElementNotVisibleException as e:
+#            continue
+#        except:
+#            print ("Feature Toggle Error: ",sys.exc_info()[0])
 
-        idx+=1
-        time.sleep(2)
+#        idx+=1
+#        time.sleep(2)
 
-    if (idx == 10):
-        sys.exit("Failed to find the 'features-toggle-collapse' element")
+#    if (idx == 10):
+#        sys.exit("Failed to find the 'features-toggle-collapse' element")
 
-    return
+#    return
 
 
 
@@ -380,14 +382,9 @@ if __name__ == '__main__':
             valueList.append(description)
 
             # Specifications
-            driver.find_element_by_id('specifications-tab').click()  # try - catch
-            #try_Specifications(driver)
-            #time.sleep(2)
+            driver.find_element_by_id('specifications-tab').click()
             driver.find_element_by_class_name('features-toggle-collapse').click()
-            #try_Feature_Toggle(driver)
-            #time.sleep(2)
-            # wait until the sections have been expanded.
-            driver.find_element_by_css_selector('.multi-collapse.collapse.show')
+            wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
             specifications = driver.find_element_by_id('specifications')
             key, values = get_Specifications(specifications)
             keyList += key
