@@ -7,6 +7,7 @@ import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import selenium.common.exceptions as seleniumException
+from selenium.webdriver.support import expected_conditions # available since 2.26.0
 #import selenium.webdriver.support.Select as Select
 
 import configdata
@@ -66,6 +67,8 @@ def try_Feature_Toggle(driver):
             feature = driver.find_element_by_class_name('features-toggle-collapse')
             feature.click()
             break
+        except seleniumException.ElementNotVisibleException as e:
+            continue
         except:
             print ("Feature Toggle Error: ",sys.exc_info()[0])
 
@@ -302,6 +305,8 @@ if __name__ == '__main__':
     
 
     driver = webdriver.Chrome(chromedriver)
+    driver.implicitly_wait(10)
+#    driver.manage().timeouts().implicitlyWait()
     driver.get(sortedBikes)
         
     numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
@@ -375,12 +380,14 @@ if __name__ == '__main__':
             valueList.append(description)
 
             # Specifications
-            #driver.find_element_by_id('specifications-tab').click()  # try - catch
-            try_Specifications(driver)
+            driver.find_element_by_id('specifications-tab').click()  # try - catch
+            #try_Specifications(driver)
             #time.sleep(2)
-            #driver.find_element_by_class_name('features-toggle-collapse').click()
-            try_Feature_Toggle(driver)
-            time.sleep(2)
+            driver.find_element_by_class_name('features-toggle-collapse').click()
+            #try_Feature_Toggle(driver)
+            #time.sleep(2)
+            # wait until the sections have been expanded.
+            driver.find_element_by_css_selector('.multi-collapse.collapse.show')
             specifications = driver.find_element_by_id('specifications')
             key, values = get_Specifications(specifications)
             keyList += key
@@ -424,7 +431,7 @@ if __name__ == '__main__':
 
 
             # Update the file with the last 100 pages of bike data
-            if (pageId % 100) == 0:
+            if (((pageId % 100) == 0) & (linkIdx == len(bikeLinks)-1)):
                 write_Data_File(dictionary=datadict, filename=filename)
 
 
