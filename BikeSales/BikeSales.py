@@ -82,8 +82,38 @@ def try_Details(element):
 
 #    return
 
+def try_class_name(tag):
+    attempt = 0
+    while (attempt < 5):
+        try:
+            element = driver.find_element_by_class_name(tag)
+            return element
+        except: 
+            time.sleep(2)
+            continue
 
+        attempt += 1
 
+    if attempt == 5:
+        return -1
+
+def try_id(tag):
+    attempt = 0
+    while (attempt < 5):
+        try:
+            element = driver.find_element_by_id(tag)
+            return element
+        except seleniumException.ElementNotVisibleException as e:
+            time.sleep(2)
+            continue
+        except:
+            time.sleep(2)
+            continue
+
+        attempt += 1
+
+    if attempt == 5:
+        return -1
 
 def get_Details(element):
     """
@@ -387,9 +417,23 @@ if __name__ == '__main__':
             valueList.append(description)
 
             # Specifications
-            driver.find_element_by_id('specifications-tab').click()
-            driver.find_element_by_class_name('features-toggle-collapse').click()
+            #driver.find_element_by_id('specifications-tab').click()
+            element = try_id('specifications-tab')
+            if element == -1:
+                continue
+            #driver.find_element_by_class_name('features-toggle-collapse').click()
+            element.click()
+            element = try_class_name('features-toggle-collapse')
+            if element == -1:
+                continue
+
+            element.click()
             wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
+            #specifications = driver.find_element_by_id('specifications')
+            specifications = try_id('specifications')
+            if specifications == -1:
+                continue
+
             specifications = driver.find_element_by_id('specifications')
             key, values = get_Specifications(specifications)
             keyList += key
