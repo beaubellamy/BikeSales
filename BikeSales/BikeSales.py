@@ -11,6 +11,7 @@ from selenium.webdriver.support import expected_conditions # available since 2.2
 #import selenium.webdriver.support.Select as Select
 
 import configdata
+max_attempts = 5
 
 def get_Element_Names(element):
     return element.find_elements_by_tag_name('th')
@@ -25,8 +26,8 @@ def get_Element_Value(element):
     return element.find_element_by_tag_name('td')
 
 def try_Details(element):
-    idx = 0
-    while idx < 10:
+    attempt = 0
+    while attempt < 10:
         try:
             details = element.find_element_by_id('details')
             break
@@ -35,10 +36,10 @@ def try_Details(element):
         except:
             print ("Details Error: ",sys.exc_info()[0])
 
-        idx+=1
+        attempt += 1
         time.sleep(2)
 
-    if (idx == 10):
+    if (attempt == 10):
         sys.exit("Failed to find the 'details' element")
 
     return details
@@ -82,6 +83,67 @@ def try_Details(element):
 
 #    return
 
+
+
+def try_id_click(driver,id_string):
+   
+    attempt = 0
+    while (attempt < max_attempts):
+        try:
+            element = driver.find_element_by_id(id_string).click()
+            return 1
+    
+        except seleniumException.NoSuchElementException as e:
+            attempt += 1
+        
+        except seleniumException.ElementNotVisibleException as e:
+            attempt += 1        
+
+        except:
+            attempt += 1
+            time.sleep(2)        
+            
+    return None
+
+def try_class_click(driver,id_string):
+   
+    attempt = 0
+    while (attempt < max_attempts):
+        try:
+            element = driver.find_element_by_class_name(id_string).click()
+            return 1
+    
+        except seleniumException.NoSuchElementException as e:
+            attempt += 1
+        
+        except seleniumException.ElementNotVisibleException as e:
+            attempt += 1        
+
+        except:
+            attempt += 1
+            time.sleep(2)        
+            
+    return None
+
+def try_id(driver,id_string):
+   
+    attempt = 0
+    while (attempt < max_attempts):
+        try:
+            element = driver.find_element_by_id(id_string)
+            return element
+                
+        except seleniumException.NoSuchElementException as e:
+            attempt += 1
+        
+        except seleniumException.ElementNotVisibleException as e:
+            attempt += 1        
+
+        except:
+            attempt += 1
+            time.sleep(2)        
+            
+    return None
 
 
 
@@ -209,7 +271,8 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
     for key in dictionary.keys():
         if (len(dictionary[key]) < size):            
             dictionary[key] = (['-']*(size-1))+dictionary[key]
-
+        elif (len(dictionary[key]) > size):
+            print (key, len(dictionary[key]), size)
 
     return dictionary
 
@@ -258,10 +321,7 @@ def update_firstSeen(datadict, bikeLink):
     idx = datadict['URL'].index(bikeLink)
     
     if 'First_Seen' in list(datadict.keys()):
-        if (idx < len(datadict['First_Seen'])):
-            datadict['First_Seen'][idx] = datetime.utcnow().date()
-        else:
-            datadict['First_Seen'].append(datetime.utcnow().date())
+        datadict['First_Seen'].append(datetime.utcnow().date())
     else:
         datadict['First_Seen'] = [datetime.utcnow().date()]
 
@@ -312,13 +372,13 @@ if __name__ == '__main__':
     
 
     driver = webdriver.Chrome(chromedriver)
-    driver.implicitly_wait(10)
+    driver.implicitly_wait(30)
 #    driver.manage().timeouts().implicitlyWait()
     driver.get(sortedBikes)
         
     numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
 
-    for pageId in range(numberOfPages):
+    for pageId in range(100,numberOfPages):
    
         # Generalise the link to all the pages
         pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
@@ -351,7 +411,7 @@ if __name__ == '__main__':
             try:
                 driver.find_element_by_tag_name('h1')
                 # Try again if the connection failed
-                while (attempt < 5 and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
+                while (attempt < max_attempts and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
                     time.sleep(5)
                     driver.get(bike)
                     print (attempt)
@@ -387,10 +447,20 @@ if __name__ == '__main__':
             valueList.append(description)
 
             # Specifications
-            driver.find_element_by_id('specifications-tab').click()
-            driver.find_element_by_class_name('features-toggle-collapse').click()
+            #driver.find_element_by_id('specifications-tab').click()
+            click = try_id_click(driver,'specifications-tab')
+            if (click == None):
+                continue
+            #driver.find_element_by_class_name('features-toggle-collapse').click()
+            click = try_class_click(driver,'features-toggle-collapse')
+            if (click == None):
+                continue
+
             wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
-            specifications = driver.find_element_by_id('specifications')
+            #specifications = driver.find_element_by_id('specifications')
+            specifications = try_id(driver,'specifications')
+            if (specifications == None):
+                continue
             key, values = get_Specifications(specifications)
             keyList += key
             valueList += values
