@@ -378,7 +378,7 @@ if __name__ == '__main__':
         
     numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
 
-    for pageId in range(1300,numberOfPages):
+    for pageId in range(numberOfPages):
    
         # Generalise the link to all the pages
         pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
