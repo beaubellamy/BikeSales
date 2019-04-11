@@ -243,10 +243,10 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
 
     """
 
-    # There needs to be at least one key labeled 'URL' in the dictionary
-    if ('URL' not in dictionary.keys()):
+    # There needs to be at least one key labeled 'Network ID' in the dictionary
+    if ('Network ID' not in dictionary.keys()):
         return None
-    size = len(dictionary['URL'])
+    size = len(dictionary['Network ID'])
 
     if (len(dictionary.keys()) > len(list_of_keys)):
         # The size of each list for each key should be the same length        
@@ -269,8 +269,9 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
             print (pageId, linkIdx, 'Dictionary keys have the same length but different values')
 
     for key in dictionary.keys():
-        if (len(dictionary[key]) < size):            
-            dictionary[key] = (['-']*(size-1))+dictionary[key]
+        if (len(dictionary[key]) < size):
+            num_extra_rows = size - len(dictionary[key])
+            dictionary[key] = (['-']*(num_extra_rows))+dictionary[key]
         elif (len(dictionary[key]) > size):
             print (key, len(dictionary[key]), size)
 
@@ -314,11 +315,11 @@ def write_Data_File(dictionary={}, filename='default_file.csv'):
 
     bikeFrame.to_csv(filename)
     
-def update_firstSeen(datadict, bikeLink):
+def update_firstSeen(datadict, networkID):
     """
     Update the last seen date for the individual advertisement.
     """
-    idx = datadict['URL'].index(bikeLink)
+    idx = datadict['Network ID'].index(networkID)
     
     if 'First_Seen' in list(datadict.keys()):
         datadict['First_Seen'].append(datetime.utcnow().date())
@@ -327,11 +328,11 @@ def update_firstSeen(datadict, bikeLink):
 
     return datadict
 
-def update_lastSeen(datadict, bikeLink):
+def update_lastSeen(datadict, networkID):
     """
     Update the last seen date for the individual advertisement.
     """
-    idx = datadict['URL'].index(bikeLink)
+    idx = datadict['Network ID'].index(networkID)
     
     if 'Last_Seen' in list(datadict.keys()):
         if (idx < len(datadict['Last_Seen'])):
@@ -359,11 +360,12 @@ if __name__ == '__main__':
             datadict[key] = list(dict[key].values())
 
         # Extract the existing reference codes
-        dictionaryURLs = datadict['URL']
+        dictionaryIDs = datadict['Network ID']
+
         
     except FileNotFoundError:
         datadict = {}
-        dictionaryURLs = []
+        dictionaryIDs = []
         
     # Set up the webdriver
     chromedriver = configdata.chromedriver
@@ -397,10 +399,12 @@ if __name__ == '__main__':
 
         # Go to each bike link
         for linkIdx, bike in enumerate(bikeLinks):
+            
+            networkID = bike.split('/')[6]
 
-            if bike in dictionaryURLs:
+            if networkID in dictionaryIDs:
                 # Update the advert last seen date
-                update_lastSeen(datadict,bike)
+                update_lastSeen(datadict, networkID)
                 # Skip to next iteration
                 continue
 
@@ -421,7 +425,11 @@ if __name__ == '__main__':
                 # Try again if the connection failed
                 while (attempt < max_attempts and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
                     time.sleep(5)
-                    driver.get(bike)
+                    try:   
+                        driver.get(bike)
+                    except seleniumException.TimeoutException:
+                        print ("Timeout exception: ",bike)
+                        continue
                     print (attempt)
                     attempt += 1
 
@@ -500,14 +508,13 @@ if __name__ == '__main__':
                 datadict['URL'] = [bike]
 
             # Add the (date of the advert) first seen date
-            update_firstSeen(datadict, bike)
+            update_firstSeen(datadict, networkID)
             # Update the advert last seen date
-            update_lastSeen(datadict,bike)
+            update_lastSeen(datadict, networkID)
             keyList += ['URL','First_Seen','Last_Seen']
 
             # Make sure the list for each key is the same length
-            if (pageId > 0 or linkIdx > 0):
-                datadict = validate_Dictionary_Keys(datadict, keyList)
+            datadict = validate_Dictionary_Keys(datadict, keyList)
 
 
             # Update the file with the last 100 pages of bike data
