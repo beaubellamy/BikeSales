@@ -33,8 +33,11 @@ def try_Details(element):
             break
         except seleniumException.ElementNotVisibleException as e:
             continue
+        except seleniumException.NoSuchElementException as e:
+            return None
         except:
             print ("Details Error: ",sys.exc_info()[0])
+            
 
         attempt += 1
         time.sleep(2)
@@ -443,6 +446,8 @@ if __name__ == '__main__':
             # Details tab
             #details = driver.find_element_by_id('details') # try - catch
             details = try_Details(driver)
+            if (details == None):
+                continue
             keyList, valueList = get_Details(details)
             
             # Comments/Description section
