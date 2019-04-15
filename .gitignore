@@ -264,3 +264,4 @@ __pycache__/
 /BikeSalesData - Copy.csv
 *.csv
 /.ipynb_checkpoints/BikeSales EDA-checkpoint.ipynb
+*.xlsx
