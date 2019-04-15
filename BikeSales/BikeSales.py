@@ -481,7 +481,11 @@ if __name__ == '__main__':
             if (click == None):
                 continue
 
-            wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
+            try:
+                wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
+            except:
+                continue
+
             #specifications = driver.find_element_by_id('specifications')
             specifications = try_id(driver,'specifications')
             if (specifications == None):
