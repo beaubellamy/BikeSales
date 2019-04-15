@@ -277,6 +277,7 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
             dictionary[key] = (['-']*(num_extra_rows))+dictionary[key]
         elif (len(dictionary[key]) > size):
             print (key, len(dictionary[key]), size)
+            dictionary[key] = dictionary[key][0:size]
 
     return dictionary
 
@@ -387,7 +388,10 @@ if __name__ == '__main__':
    
         # Generalise the link to all the pages
         pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
-        driver.get(pageUrl)
+        try:
+            driver.get(pageUrl)
+        except:
+            continue
 
         # Get the list of all the bikes on the page
         bikesInPage = driver.find_elements_by_css_selector('.listing-item.standard')
