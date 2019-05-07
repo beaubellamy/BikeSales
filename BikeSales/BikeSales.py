@@ -317,7 +317,7 @@ def write_Data_File(dictionary={}, filename='default_file.csv'):
     
     bikeFrame['Last_Seen'] = datetime.utcnow().date()
 
-    bikeFrame.to_csv(filename)
+    bikeFrame.to_csv(filename,index=True)
     
 def update_firstSeen(datadict, networkID):
     """
