@@ -314,9 +314,7 @@ def write_Data_File(dictionary={}, filename='default_file.csv'):
 
     bikeFrame = pd.DataFrame.from_dict(dictionary,orient='columns')
     bikeFrame.drop(['Bike Facts','Bike Payment','Need Insurance?','Phone'],axis=1, inplace=True, errors='ignore')
-    
-    bikeFrame['Last_Seen'] = datetime.utcnow().date().strftime('%Y-%m-%d')
-
+        
     bikeFrame.to_csv(filename,index=True)
     
 def update_firstSeen(datadict, networkID):
@@ -326,9 +324,9 @@ def update_firstSeen(datadict, networkID):
     idx = datadict['Network ID'].index(networkID)
     
     if 'First_Seen' in list(datadict.keys()):
-        datadict['First_Seen'].append(datetime.utcnow().date().strftime('%Y-%m-%d'))
+        datadict['First_Seen'].append(datetime.utcnow().date())
     else:
-        datadict['First_Seen'] = [datetime.utcnow().date().strftime('%Y-%m-%d')]
+        datadict['First_Seen'] = [datetime.utcnow().date()]
 
     return datadict
 
@@ -340,11 +338,11 @@ def update_lastSeen(datadict, networkID):
     
     if 'Last_Seen' in list(datadict.keys()):
         if (idx < len(datadict['Last_Seen'])):
-            datadict['Last_Seen'][idx] = datetime.utcnow().date().strftime('%Y-%m-%d')
+            datadict['Last_Seen'][idx] = datetime.utcnow().date()
         else:
-            datadict['Last_Seen'].append(datetime.utcnow().date().strftime('%Y-%m-%d'))
+            datadict['Last_Seen'].append(datetime.utcnow().date())
     else:
-        datadict['Last_Seen'] = [datetime.utcnow().date().strftime('%Y-%m-%d')]
+        datadict['Last_Seen'] = [datetime.utcnow().date()]
 
     return datadict
 
