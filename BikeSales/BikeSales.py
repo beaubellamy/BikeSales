@@ -378,8 +378,13 @@ if __name__ == '__main__':
     driver = webdriver.Chrome(chromedriver)
     driver.implicitly_wait(30)
 #    driver.manage().timeouts().implicitlyWait()
-#    driver.get(sortedBikes)
-        
+    driver.get(sortedBikes)
+    
+    biketype = driver.find_elements_by_class_name('heading-summary')
+    #biketype[2] # Bike Type
+    #biketype[2].find_elements_by_class_name('facet-visible') # list of bike types
+
+
 #    numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
 
     for subtype in subtypes:
