@@ -373,173 +373,222 @@ if __name__ == '__main__':
     chromedriver = configdata.chromedriver
     bikesPerPage = 12
     sortedBikes = "https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price"
-    subtypes = ['adventure-sport','adventure-touring','crusier','naked','scooters','sport-touring','super-motard','super-sport','touring','vintage']
+    #subtypes = ['adventure-sport','adventure-touring','crusier','naked','scooters','sport-touring','super-motard','super-sport','touring','vintage']
 
     driver = webdriver.Chrome(chromedriver)
     driver.implicitly_wait(30)
 #    driver.manage().timeouts().implicitlyWait()
     driver.get(sortedBikes)
     
-    biketype = driver.find_elements_by_class_name('heading-summary')
-    #biketype[2] # Bike Type
-    #biketype[2].find_elements_by_class_name('facet-visible') # list of bike types
+    #biketype = driver.find_elements_by_class_name('heading-summary')
+    bikeCategory = driver.find_elements_by_class_name('aspect-navigation-element')
+    categoryList = bikeCategory[0].find_elements_by_class_name("facet-visible")
+    # loop through the bake categories
+    for bikeCategory in categoryList:
+        
+        category = bikeCategory.text.split('\n')[0].replace(' & ','-')
+        category.replace(' ','-')
 
+        bikeCategory.find_element_by_css_selector('a').click()
+        #subtype_xpath = '//*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]'
+        subTypes = driver.find_elements_by_class_name('aspect')[0].find_elements_by_css_selector('a')
+        if subTypes[-2].text == 'view all...':
+            subTypes[-2].click()
 
-#    numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
+        #biketype[2] # Bike Type
+        #biketype[2].find_elements_by_class_name('facet-visible') # list of bike types
 
-    for subtype in subtypes:
+        #selector = retail-nav-component > div.nav-elements > div:nth-child(3) > div.element-selection > div > div > div > div.child-aspects > div.aspect
+        #subtype_xpath = //*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]
+    #    numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
+                        #//*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]/a[1]
 
-        for pageId in range(100): #numberOfPages):
+        for subtype in subTypes:
+            
+            bikeType = subtype.text.replace(' ','-')
+            
+            subtype.click()
+
+            # get the make
+            makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
+            if makeList[-2].text == 'view all makes...':
+                makeList[-2].click()
+
+            # select the make
+            # loop
+            for make in makeList:
+                bikeMake = make.text.replace(' ','-')
+                make.click()
+
+                # Get the model
+                modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
+                if modelList[-2].text == 'view all models...':
+                    modelList[-2].click()
+
+                # loop through models
+                for model in modelList:
+                    # need to get the url to click on, or the webelement goes stale after first pass of the loop.
+                    bikeModel = model.text.replace(' ','-')
+                    model.click()
+
+                    #"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/"+bikeModel+"/?Sort=Price"
+
+                    numberOfPages = int(int(driver.find_elements_by_class_name('title')[1].text.split()[0])/12)
+
+                    # loop through the bikes
+                    for pageId in range(numberOfPages):
    
-            # Generalise the link to all the pages
-            #pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
-            pageUrl = "https://www.bikesales.com.au/bikes/road/"+subtype+"-subtype/?Sort=Price&offset="+str(pageId*bikesPerPage)
+                        # Generalise the link to all the pages
+                        #pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
+                        #pageUrl = "https://www.bikesales.com.au/bikes/road/"+subtype+"-subtype/?Sort=Price&offset="+str(pageId*bikesPerPage)
+                        pageUrl = "https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/"+bikeModel+"/?Sort=Price&offset="+str(pageId*bikesPerPage)
 
-            try:
-                driver.get(pageUrl)
-            except:
-                continue
 
-            # Get the list of all the bikes on the page
-            bikesInPage = driver.find_elements_by_css_selector('.listing-item.standard')
+                        try:
+                            driver.get(pageUrl)
+                        except:
+                            continue
+
+                        # Get the list of all the bikes on the page
+                        bikesInPage = driver.find_elements_by_css_selector('.listing-item.standard')
 
         
-            bikeLinks = []
-            # Extract the links into a list
-            for bike in bikesInPage:
-                link = bike.find_element_by_css_selector('a').get_attribute('href')
-                bikeLinks.append(link)
+                        bikeLinks = []
+                        # Extract the links into a list
+                        for bike in bikesInPage:
+                            link = bike.find_element_by_css_selector('a').get_attribute('href')
+                            bikeLinks.append(link)
 
 
-            # Go to each bike link
-            for linkIdx, bike in enumerate(bikeLinks):
+                        # Go to each bike link
+                        for linkIdx, bike in enumerate(bikeLinks):
             
-                networkID = bike.split('/')[6]
+                            networkID = bike.split('/')[6]
 
-                if networkID in dictionaryIDs:
-                    # Update the advert last seen date
-                    update_lastSeen(datadict, networkID)
-                    # Skip to next iteration
-                    continue
+                            if networkID in dictionaryIDs:
+                                # Update the advert last seen date
+                                update_lastSeen(datadict, networkID)
+                                # Skip to next iteration
+                                continue
 
-                attempt = 0
-                print (pageId, linkIdx, bike)
+                            attempt = 0
+                            print (pageId, linkIdx, bike)
  
-                try:   
-                    driver.get(bike)
-                except seleniumException.TimeoutException:
-                    print ("Timeout exception: ",bike)
-                    continue
+                            try:   
+                                driver.get(bike)
+                            except seleniumException.TimeoutException:
+                                print ("Timeout exception: ",bike)
+                                continue
 
 
 
 
-                try:
-                    driver.find_element_by_tag_name('h1')
-                    # Try again if the connection failed
-                    while (attempt < max_attempts and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
-                        time.sleep(5)
-                        try:   
-                            driver.get(bike)
-                        except seleniumException.TimeoutException:
-                            print ("Timeout exception: ",bike)
-                            continue
-                        print (attempt)
-                        attempt += 1
+                            try:
+                                driver.find_element_by_tag_name('h1')
+                                # Try again if the connection failed
+                                while (attempt < max_attempts and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
+                                    time.sleep(5)
+                                    try:   
+                                        driver.get(bike)
+                                    except seleniumException.TimeoutException:
+                                        print ("Timeout exception: ",bike)
+                                        continue
+                                    print (attempt)
+                                    attempt += 1
 
-                    if (driver.find_element_by_tag_name('h1').text == 'Access Denied'):
-                        continue
+                                if (driver.find_element_by_tag_name('h1').text == 'Access Denied'):
+                                    continue
 
-                except seleniumException.NoSuchElementException:
-                    print('FAILED: ', pageId, linkIdx, bike)
-                    continue
+                            except seleniumException.NoSuchElementException:
+                                print('FAILED: ', pageId, linkIdx, bike)
+                                continue
 
-                # Details tab
-                #details = driver.find_element_by_id('details') # try - catch
-                details = try_Details(driver)
-                if (details == None):
-                    continue
-                keyList, valueList = get_Details(details)
+                            # Details tab
+                            #details = driver.find_element_by_id('details') # try - catch
+                            details = try_Details(driver)
+                            if (details == None):
+                                continue
+                            keyList, valueList = get_Details(details)
             
-                # Comments/Description section
-                try:
-                    driver.find_element_by_class_name('view-more').click()
-                    description = driver.find_element_by_class_name('view-more-target').text
-                    description = ' '.join(description.replace('\n',' ').split())
+                            # Comments/Description section
+                            try:
+                                driver.find_element_by_class_name('view-more').click()
+                                description = driver.find_element_by_class_name('view-more-target').text
+                                description = ' '.join(description.replace('\n',' ').split())
                 
-                except seleniumException.ElementNotVisibleException as e:
-                    description = driver.find_element_by_class_name('view-more-target').text
-                    description = ' '.join(description.replace('\n',' ').split())
+                            except seleniumException.ElementNotVisibleException as e:
+                                description = driver.find_element_by_class_name('view-more-target').text
+                                description = ' '.join(description.replace('\n',' ').split())
             
-                except seleniumException.NoSuchElementException as e:
-                    description = ''
+                            except seleniumException.NoSuchElementException as e:
+                                description = ''
             
 
-                keyList.append('Description')
-                valueList.append(description)
+                            keyList.append('Description')
+                            valueList.append(description)
 
-                # Specifications
-                #driver.find_element_by_id('specifications-tab').click()
-                click = try_id_click(driver,'specifications-tab')
-                if (click == None):
-                    continue
-                #driver.find_element_by_class_name('features-toggle-collapse').click()
-                click = try_class_click(driver,'features-toggle-collapse')
-                if (click == None):
-                    continue
+                            # Specifications
+                            #driver.find_element_by_id('specifications-tab').click()
+                            click = try_id_click(driver,'specifications-tab')
+                            if (click == None):
+                                continue
+                            #driver.find_element_by_class_name('features-toggle-collapse').click()
+                            click = try_class_click(driver,'features-toggle-collapse')
+                            if (click == None):
+                                continue
 
-                try:
-                    wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
-                except:
-                    continue
+                            try:
+                                wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
+                            except:
+                                continue
 
-                #specifications = driver.find_element_by_id('specifications')
-                specifications = try_id(driver,'specifications')
-                if (specifications == None):
-                    continue
-                key, values = get_Specifications(specifications)
-                keyList += key
-                valueList += values
+                            #specifications = driver.find_element_by_id('specifications')
+                            specifications = try_id(driver,'specifications')
+                            if (specifications == None):
+                                continue
+                            key, values = get_Specifications(specifications)
+                            keyList += key
+                            valueList += values
 
-                suburb, state, postcode = get_Location(driver)
+                            suburb, state, postcode = get_Location(driver)
 
-                keyList += ['Suburb', 'State', 'Postcode']
-                valueList += [suburb, state, postcode]
+                            keyList += ['Suburb', 'State', 'Postcode']
+                            valueList += [suburb, state, postcode]
 
-                # Remove the duplicate of Engine Capacity from both lists
-                if (keyList.count('Engine Capacity') > 1):
-                    removeIdx = keyList.index('Engine Capacity')
-                    del keyList[removeIdx]
-                    del valueList[removeIdx]
+                            # Remove the duplicate of Engine Capacity from both lists
+                            if (keyList.count('Engine Capacity') > 1):
+                                removeIdx = keyList.index('Engine Capacity')
+                                del keyList[removeIdx]
+                                del valueList[removeIdx]
 
            
-                # Add the values to the dictionary.
-                for idx, key in enumerate(keyList):
-                    value = valueList[idx]
-                    if key in list(datadict.keys()):            
-                        datadict[key].append(value)
-                    else: 
-                        datadict[key] = [value]
+                            # Add the values to the dictionary.
+                            for idx, key in enumerate(keyList):
+                                value = valueList[idx]
+                                if key in list(datadict.keys()):            
+                                    datadict[key].append(value)
+                                else: 
+                                    datadict[key] = [value]
 
-                # Add the reference URL to the dictionary
-                if 'URL' in list(datadict.keys()):          
-                    datadict['URL'].append(bike)
-                else: 
-                    datadict['URL'] = [bike]
+                            # Add the reference URL to the dictionary
+                            if 'URL' in list(datadict.keys()):          
+                                datadict['URL'].append(bike)
+                            else: 
+                                datadict['URL'] = [bike]
 
-                # Add the (date of the advert) first seen date
-                update_firstSeen(datadict, networkID)
-                # Update the advert last seen date
-                update_lastSeen(datadict, networkID)
-                keyList += ['URL','First_Seen','Last_Seen']
+                            # Add the (date of the advert) first seen date
+                            update_firstSeen(datadict, networkID)
+                            # Update the advert last seen date
+                            update_lastSeen(datadict, networkID)
+                            keyList += ['URL','First_Seen','Last_Seen']
 
-                # Make sure the list for each key is the same length
-                datadict = validate_Dictionary_Keys(datadict, keyList)
+                            # Make sure the list for each key is the same length
+                            datadict = validate_Dictionary_Keys(datadict, keyList)
 
 
-                # Update the file with the last 100 pages of bike data
-                if (((pageId % 100) == 0) & (linkIdx == len(bikeLinks)-1)):
-                    write_Data_File(dictionary=datadict, filename=filename)
+                            # Update the file with the last 100 pages of bike data
+                            if (((pageId % 100) == 0) & (linkIdx == len(bikeLinks)-1)):
+                                write_Data_File(dictionary=datadict, filename=filename)
                     
         # Write the subtype to file
         write_Data_File(dictionary=datadict, filename=filename)
