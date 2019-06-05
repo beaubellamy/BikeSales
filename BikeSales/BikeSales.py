@@ -381,15 +381,15 @@ if __name__ == '__main__':
     driver.get(sortedBikes)
     
     #biketype = driver.find_elements_by_class_name('heading-summary')
-    bikeCategory = driver.find_elements_by_class_name('aspect-navigation-element')
-    categoryList = bikeCategory[0].find_elements_by_class_name("facet-visible")
+    category_block = driver.find_elements_by_class_name('aspect-navigation-element')
+    categoryList = category_block[0].find_elements_by_class_name("facet-visible")
     # loop through the bake categories
-    for bikeCategory in categoryList:
+    for category_idx in range(len(categoryList)-2):
         
-        category = bikeCategory.text.split('\n')[0].replace(' & ','-')
+        category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category.replace(' ','-')
 
-        bikeCategory.find_element_by_css_selector('a').click()
+        categoryList[category_idx].find_element_by_css_selector('a').click()
         #subtype_xpath = '//*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]'
         subTypes = driver.find_elements_by_class_name('aspect')[0].find_elements_by_css_selector('a')
         if subTypes[-2].text == 'view all...':
@@ -403,11 +403,11 @@ if __name__ == '__main__':
     #    numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
                         #//*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]/a[1]
 
-        for subtype in subTypes:
+        for subtype_idx in range(len(subTypes)-2):
             
-            bikeType = subtype.text.replace(' ','-')
+            bikeType = subTypes[subtype_idx].text.replace(' ','-')
             
-            subtype.click()
+            subTypes[subtype_idx].click()
 
             # get the make
             makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
@@ -416,9 +416,10 @@ if __name__ == '__main__':
 
             # select the make
             # loop
-            for make in makeList:
-                bikeMake = make.text.replace(' ','-')
-                make.click()
+            for makeIdx in range(len(makeList)-2):
+
+                bikeMake = makeList[makeIdx].text.replace(' ','-')
+                makeList[makeIdx].click()
 
                 # Get the model
                 modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
@@ -426,17 +427,19 @@ if __name__ == '__main__':
                     modelList[-2].click()
 
                 # loop through models
-                for model in modelList:
+                #for model in modelList:
+                for model_idx in range(len(modelList)-2):
+                    
                     # need to get the url to click on, or the webelement goes stale after first pass of the loop.
-                    bikeModel = model.text.replace(' ','-')
-                    model.click()
+                    bikeModel = modelList[model_idx].text.replace(' ','-')
+                    modelList[model_idx].click()
 
                     #"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/"+bikeModel+"/?Sort=Price"
 
                     numberOfPages = int(int(driver.find_elements_by_class_name('title')[1].text.split()[0])/12)
 
                     # loop through the bikes
-                    for pageId in range(numberOfPages):
+                    for pageId in range(numberOfPages+1):
    
                         # Generalise the link to all the pages
                         #pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
@@ -473,6 +476,8 @@ if __name__ == '__main__':
 
                             attempt = 0
                             print (pageId, linkIdx, bike)
+                            
+
  
                             try:   
                                 driver.get(bike)
@@ -552,8 +557,9 @@ if __name__ == '__main__':
 
                             suburb, state, postcode = get_Location(driver)
 
-                            keyList += ['Suburb', 'State', 'Postcode']
-                            valueList += [suburb, state, postcode]
+                            keyList += ['Suburb', 'State', 'Postcode','Category','SubType', 'Make', 'Model']
+                            valueList += [suburb, state, postcode,category, bikeType, bikeMake, bikeModel]
+                            
 
                             # Remove the duplicate of Engine Capacity from both lists
                             if (keyList.count('Engine Capacity') > 1):
@@ -587,9 +593,40 @@ if __name__ == '__main__':
 
 
                             # Update the file with the last 100 pages of bike data
-                            if (((pageId % 100) == 0) & (linkIdx == len(bikeLinks)-1)):
-                                write_Data_File(dictionary=datadict, filename=filename)
-                    
+                            #if (((pageId % 100) == 0) & (linkIdx == len(bikeLinks)-1)):
+                            #    write_Data_File(dictionary=datadict, filename=filename)
+                   
+                    # reset the model filter
+                    #print ('end of model filter')
+                    driver.get("https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/?Sort=Price")
+                    modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
+                    if modelList[-2].text == 'view all models...':
+                        modelList[-2].click()
+
+                # reset the make filter
+                print ('end of make filter')
+                driver.get("https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/?Sort=Price")
+                makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
+                if makeList[-2].text == 'view all makes...':
+                    makeList[-2].click()
+
+                
+
+            # reset subtype
+            print ('end of subtype filter')
+            driver.get("https://www.bikesales.com.au/bikes/"+category+"/?Sort=Price")
+            subTypes = driver.find_elements_by_class_name('aspect')[0].find_elements_by_css_selector('a')
+            if subTypes[-2].text == 'view all...':
+                subTypes[-2].click()
+
+            write_Data_File(dictionary=datadict, filename=filename)
+
+        # reset the category
+        driver.get(sortedBikes)
+        category_block = driver.find_elements_by_class_name('aspect-navigation-element')
+        categoryList = category_block[0].find_elements_by_class_name("facet-visible")
+
+
         # Write the subtype to file
         write_Data_File(dictionary=datadict, filename=filename)
 
