@@ -430,6 +430,7 @@ if __name__ == '__main__':
             bikeType = subTypes[subtype_idx].text.replace(' ','-')
             print (bikeType)
 
+            time.sleep(2)
             subTypes[subtype_idx].click()
 
             # get the make
@@ -443,6 +444,7 @@ if __name__ == '__main__':
             for makeIdx in range(len(makeList)):
                 
                 bikeMake = makeList[makeIdx].text.replace(' ','-')
+                time.sleep(2)
                 makeList[makeIdx].click()
                 print (bikeMake)
 
@@ -459,7 +461,23 @@ if __name__ == '__main__':
                     
                     # need to get the url to click on, or the webelement goes stale after first pass of the loop.
                     bikeModel = modelList[model_idx].text.replace(' ','-')
-                    modelList[model_idx].click()
+                    time.sleep(2)
+                    try:
+                        modelList[model_idx].click()
+                    except seleniumException.ElementNotVisibleException as e:
+                        print ("Error "+e.msg)
+                        print (modelList[model_idx].current_url)
+                        print (modelList[model_idx].text)
+                        time.sleep(5)
+                        modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
+                        if len(modelList) > 2:
+                            if modelList[-2].text == 'view all models...':
+                                modelList[-2].click()
+                                modelList = modelList[0:-2]
+                        modelList[model_idx].click()
+
+
+
                     print (bikeModel)
 
                     #"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/"+bikeModel+"/?Sort=Price"
