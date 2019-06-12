@@ -268,3 +268,4 @@ __pycache__/
 .~BikeSales EDA.ipynb
 .ipynb_checkpoints/BikeSales Class modelling-checkpoint.ipynb
 .ipynb_checkpoints/BikeSales Class modelling-checkpoint.ipynb
+*.png
