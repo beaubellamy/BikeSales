@@ -169,6 +169,20 @@ def try_id(driver,id_string):
             
     return None
 
+def try_get(driver, url):
+    attempts = 0
+
+    while True:
+        try:
+            driver.get(url)
+            break;
+        except seleniumException.TimeoutException:
+            print ("Timeout exception: ",attempts, url)
+            attempts += 1
+            continue
+
+    return driver
+
 
 
 def get_Details(element):
@@ -406,7 +420,7 @@ if __name__ == '__main__':
     categoryList = category_block[0].find_elements_by_class_name("facet-visible")
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
-        
+                
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
 
@@ -445,8 +459,21 @@ if __name__ == '__main__':
                 
                 bikeMake = makeList[makeIdx].text.replace(' ','-')
                 time.sleep(2)
-                makeList[makeIdx].click()
+                try:
+                    makeList[makeIdx].click()
+                except seleniumException.ElementNotVisibleException as e:
+                    print ("Make Error "+e.msg)
+                    print (makeList[makeIdx].text)
+                    time.sleep(5)
+                    makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
+                    if len(makeList) > 2:
+                        if makeList[-2].text == 'view all makes...':
+                            makeList[-2].click()
+                            makeList = makeList[0:-2]
+                        makeList[makeIdx].click()
+
                 print (bikeMake)
+                
 
                 # Get the model
                 modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
@@ -461,12 +488,12 @@ if __name__ == '__main__':
                     
                     # need to get the url to click on, or the webelement goes stale after first pass of the loop.
                     bikeModel = modelList[model_idx].text.replace(' ','-')
+                    bikeModel = modelList[model_idx].text.replace('-/-','-')
                     time.sleep(2)
                     try:
                         modelList[model_idx].click()
                     except seleniumException.ElementNotVisibleException as e:
                         print ("Error "+e.msg)
-                        print (modelList[model_idx].current_url)
                         print (modelList[model_idx].text)
                         time.sleep(5)
                         modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
@@ -624,6 +651,7 @@ if __name__ == '__main__':
 
                             # Add the reference URL to the dictionary
                             if 'URL' in list(datadict.keys()):          
+
                                 datadict['URL'].append(bike)
                             else: 
                                 datadict['URL'] = [bike]
@@ -639,12 +667,13 @@ if __name__ == '__main__':
 
 
                             # Update the file with the last 100 pages of bike data
-                            #if (((pageId % 100) == 0) & (linkIdx == len(bikeLinks)-1)):
-                            #    write_Data_File(dictionary=datadict, filename=filename)
+                            if (((pageId % 10) == 0) & (linkIdx == len(bikeLinks)-1)):
+                                write_Data_File(dictionary=datadict, filename=filename)
                    
                     # reset the model filter
                     # print ('end of model filter')
-                    driver.get("https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/?Sort=Price")
+                    #driver.get("https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/?Sort=Price")
+                    driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/?Sort=Price")
                     #modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
                     elements = try_class_names(driver,'aspect')
                     modelList = elements[2].find_elements_by_css_selector('a')
@@ -652,25 +681,32 @@ if __name__ == '__main__':
                         if modelList[-2].text == 'view all models...':
                             modelList[-2].click()
 
+                
+                write_Data_File(dictionary=datadict, filename=filename)
                 # reset the make filter
+                
                 print ('end of make filter')
-                driver.get("https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/?Sort=Price")
+                #driver.get("https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/?Sort=Price")
+                driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/?Sort=Price")
+                    
                 makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
                 if len(makeList) > 2:
                     if makeList[-2].text == 'view all makes...':
                         makeList[-2].click()
 
                 
-
+            write_Data_File(dictionary=datadict, filename=filename)
             # reset subtype
             print ('end of subtype filter')
-            driver.get("https://www.bikesales.com.au/bikes/"+category+"/?Sort=Price")
+            #driver.get("https://www.bikesales.com.au/bikes/"+category+"/?Sort=Price")
+            driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/?Sort=Price")
+                
             subTypes = driver.find_elements_by_class_name('aspect')[0].find_elements_by_css_selector('a')
             if len(subTypes) > 2:
                 if subTypes[-2].text == 'view all...':
                     subTypes[-2].click()
 
-            write_Data_File(dictionary=datadict, filename=filename)
+            
 
         # reset the category
         driver.get(sortedBikes)
