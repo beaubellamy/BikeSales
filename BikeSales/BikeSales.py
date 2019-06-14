@@ -398,7 +398,7 @@ def update_lastSeen(datadict, networkID):
 if __name__ == '__main__':
 
     # Read the bikeSales csv file, if it exists
-    filename = '..\BikeSalesData-v2.csv'
+    filename = '..\BikeSalesData-Road.csv'
     try:
         df = pd.read_csv(filename, sep=',',index_col=0)
         dict = df.to_dict()
@@ -433,6 +433,9 @@ if __name__ == '__main__':
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
+        if category_idx != 3:
+            continue
+
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
 
