@@ -362,7 +362,7 @@ def write_Data_File(dictionary={}, filename='default_file.csv'):
     bikeFrame = pd.DataFrame.from_dict(dictionary,orient='columns')
     bikeFrame.drop(['Bike Facts','Bike Payment','Need Insurance?','Phone'],axis=1, inplace=True, errors='ignore')
         
-    bikeFrame.to_csv(filename,index=True)
+    bikeFrame.to_csv(filename,index=False)
     
 def update_firstSeen(datadict, networkID):
     """
@@ -439,7 +439,11 @@ if __name__ == '__main__':
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
 
-        categoryList[category_idx].find_element_by_css_selector('a').click()
+        time.sleep(5)
+        #categoryList[category_idx].find_element_by_css_selector('a').click()
+        element = categoryList[category_idx].find_element_by_css_selector('a')
+        driver.execute_script("arguments[0].click();", element)
+
         #subtype_xpath = '//*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]'
         #subTypes = driver.find_elements_by_class_name('aspect')[0].find_elements_by_css_selector('a')
         subTypes = try_class_name_selectors(driver, 'aspect', 0)
@@ -459,6 +463,9 @@ if __name__ == '__main__':
 
         for subtype_idx in range(len(subTypes)):
             
+            if subtype_idx <= 8:
+                continue
+
             bikeType = subTypes[subtype_idx].text.replace(' ','-')
             print (bikeType)
 
@@ -477,7 +484,7 @@ if __name__ == '__main__':
             # select the make
             # loop
             for makeIdx in range(len(makeList)):
-                
+              
                 bikeMake = makeList[makeIdx].text.replace(' ','-')
                 time.sleep(2)
                 try:
@@ -519,6 +526,16 @@ if __name__ == '__main__':
                         modelList[model_idx].click()
                     except seleniumException.ElementNotVisibleException as e:
                         print ("Error "+e.msg)
+                        print ('Missed ',modelList[model_idx].text)
+                        continue
+                    except seleniumException.ElementClickInterceptedException as e:
+                        print ('ElementClickInterceptedException Exception',modelList[model_idx])
+                        time.sleep(5)
+                        modelList[model_idx].click()
+                        #element = modelList[model_idx]
+                        #driver.execute_script("arguments[0].click();", element)
+                    
+
                         
 
 
@@ -527,6 +544,7 @@ if __name__ == '__main__':
                     #"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/"+bikeModel+"/?Sort=Price"
 
                     try:
+                        time.sleep(5)
                         numberOfPages = int(int(driver.find_elements_by_class_name('title')[1].text.split()[0])/12)
                     except seleniumException as e:
                         continue
