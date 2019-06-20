@@ -191,8 +191,13 @@ def try_class_name_selectors(driver, class_string, index):
         try:                        
            return driver.find_elements_by_class_name(class_string)[index].find_elements_by_css_selector('a')
 
+
         except seleniumException.ElementNotVisibleException as e:
             attempt += 1
+        except:
+            driver.get(driver.current_url)
+            attempt += 1
+
     return None
 
 
@@ -447,6 +452,8 @@ if __name__ == '__main__':
         #subtype_xpath = '//*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]'
         #subTypes = driver.find_elements_by_class_name('aspect')[0].find_elements_by_css_selector('a')
         subTypes = try_class_name_selectors(driver, 'aspect', 0)
+        if subTypes == None:
+            continue
 
         if len(subTypes) > 2:
             if subTypes[-2].text == 'view all...':
@@ -474,6 +481,9 @@ if __name__ == '__main__':
 
             # get the make
             makeList = try_class_name_selectors(driver, 'aspect', 1)
+            if makeList == None:
+                continue
+
             #makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
 
             if len(makeList) > 2:
@@ -494,6 +504,9 @@ if __name__ == '__main__':
                     print (makeList[makeIdx].text)
                     time.sleep(5)
                     makeList = try_class_name_selectors(driver, 'aspect', 1)
+                    if makeList == None:
+                        continue
+
                     #makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
                     
                     if len(makeList) > 2:
@@ -507,6 +520,8 @@ if __name__ == '__main__':
 
                 # Get the model
                 modelList = try_class_name_selectors(driver, 'aspect', 2)
+                if modelList == None:
+                    continue
                 #modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
                 
                 if len(modelList) > 2:
@@ -716,6 +731,9 @@ if __name__ == '__main__':
                     #elements = try_class_names(driver,'aspect')
                     #modelList = elements[2].find_elements_by_css_selector('a')
                     modelList = try_class_name_selectors(driver, 'aspect', 2)
+                    if modelList == None:
+                        continue
+
                     if len(modelList) > 2:
                         if modelList[-2].text == 'view all models...':
                             modelList[-2].click()
@@ -730,6 +748,9 @@ if __name__ == '__main__':
                     
                 #makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
                 makeList = try_class_name_selectors(driver, 'aspect', 1)
+                if makeList == None:
+                    continue
+
                 if len(makeList) > 2:
                     if makeList[-2].text == 'view all makes...':
                         makeList[-2].click()
@@ -744,6 +765,9 @@ if __name__ == '__main__':
                 
             #subTypes = driver.find_elements_by_class_name('aspect')[0].find_elements_by_css_selector('a')
             subTypes = try_class_name_selectors(driver, 'aspect', 0)
+            if subTypes == None:
+                    continue
+
             if len(subTypes) > 2:
                 if subTypes[-2].text == 'view all...':
                     subTypes[-2].click()
