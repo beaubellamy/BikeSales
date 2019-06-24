@@ -405,7 +405,7 @@ if __name__ == '__main__':
     # Read the bikeSales csv file, if it exists
     filename = '..\BikeSalesData-v2.csv'
     try:
-        df = pd.read_csv(filename, sep=',',index_col=0)
+        df = pd.read_csv(filename, sep=',')
         dict = df.to_dict()
 
         # Convert the dictionary of dictionary's, to a dictionary of lists.
@@ -438,7 +438,7 @@ if __name__ == '__main__':
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
-        #if category_idx != 3:
+        #if category_idx < 2:   # 2: Racing
         #    continue
 
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
@@ -451,7 +451,11 @@ if __name__ == '__main__':
 
         #subtype_xpath = '//*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]'
         #subTypes = driver.find_elements_by_class_name('aspect')[0].find_elements_by_css_selector('a')
-        subTypes = try_class_name_selectors(driver, 'aspect', 0)
+        if not driver.find_elements_by_class_name('aspect-name'):
+            subTypes = ['None']
+        else:
+            subTypes = try_class_name_selectors(driver, 'aspect', 0)
+
         if subTypes == None:
             continue
 
@@ -473,14 +477,22 @@ if __name__ == '__main__':
             #if subtype_idx <= 8:
             #    continue
 
-            bikeType = subTypes[subtype_idx].text.replace(' ','-')
-            print (bikeType)
+            if subTypes[subtype_idx] != 'None':
+                bikeType = subTypes[subtype_idx].text.replace(' ','-')
+                subCategory = bikeType
+                bikeType = bikeType+'-subtype'
+                print (bikeType)
 
-            time.sleep(2)
-            subTypes[subtype_idx].click()
+                time.sleep(2)
+                subTypes[subtype_idx].click()
+                offset = 0
+            else:               
+                bikeType = ''
+                subCategory = bikeType
+                offset = 1
 
             # get the make
-            makeList = try_class_name_selectors(driver, 'aspect', 1)
+            makeList = try_class_name_selectors(driver, 'aspect', 1-offset)
             if makeList == None:
                 continue
 
@@ -503,7 +515,7 @@ if __name__ == '__main__':
                     print ("Make Error "+e.msg)
                     print (makeList[makeIdx].text)
                     time.sleep(5)
-                    makeList = try_class_name_selectors(driver, 'aspect', 1)
+                    makeList = try_class_name_selectors(driver, 'aspect', 1-offset)
                     if makeList == None:
                         continue
 
@@ -519,7 +531,7 @@ if __name__ == '__main__':
                 print (bikeMake)
 
                 # Get the model
-                modelList = try_class_name_selectors(driver, 'aspect', 2)
+                modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
                 if modelList == None:
                     continue
                 #modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
@@ -535,7 +547,9 @@ if __name__ == '__main__':
                     
                     # need to get the url to click on, or the webelement goes stale after first pass of the loop.
                     bikeModel = modelList[model_idx].text.replace(' ','-')
-                    bikeModel = modelList[model_idx].text.replace('-/-','-')
+                    bikeModel = bikeModel.replace('-/-','-')
+                    #bikeModel = bikeModel.replace('--','-')
+
                     time.sleep(2)
                     try:
                         modelList[model_idx].click()
@@ -570,7 +584,7 @@ if __name__ == '__main__':
                         # Generalise the link to all the pages
                         #pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
                         #pageUrl = "https://www.bikesales.com.au/bikes/road/"+subtype+"-subtype/?Sort=Price&offset="+str(pageId*bikesPerPage)
-                        pageUrl = "https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/"+bikeModel+"/?Sort=Price&offset="+str(pageId*bikesPerPage)
+                        pageUrl = "https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/"+bikeMake+"/"+bikeModel+"/?Sort=Price&offset="+str(pageId*bikesPerPage)
 
 
                         try:
@@ -684,7 +698,7 @@ if __name__ == '__main__':
                             suburb, state, postcode = get_Location(driver)
 
                             keyList += ['Suburb', 'State', 'Postcode','Category','SubType', 'Make', 'Model']
-                            valueList += [suburb, state, postcode,category, bikeType, bikeMake, bikeModel]
+                            valueList += [suburb, state, postcode,category, subCategory, bikeMake, bikeModel]
                             
 
                             # Remove the duplicate of Engine Capacity from both lists
@@ -726,11 +740,11 @@ if __name__ == '__main__':
                     # reset the model filter
                     # print ('end of model filter')
                     #driver.get("https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/?Sort=Price")
-                    driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/?Sort=Price")
+                    driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/"+bikeMake+"/?Sort=Price")
                     #modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
                     #elements = try_class_names(driver,'aspect')
                     #modelList = elements[2].find_elements_by_css_selector('a')
-                    modelList = try_class_name_selectors(driver, 'aspect', 2)
+                    modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
                     if modelList == None:
                         continue
 
@@ -744,10 +758,10 @@ if __name__ == '__main__':
                 
                 print ('end of make filter')
                 #driver.get("https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/?Sort=Price")
-                driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/?Sort=Price")
+                driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/?Sort=Price")
                     
                 #makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
-                makeList = try_class_name_selectors(driver, 'aspect', 1)
+                makeList = try_class_name_selectors(driver, 'aspect', 1-offset)
                 if makeList == None:
                     continue
 
