@@ -403,7 +403,8 @@ def update_lastSeen(datadict, networkID):
 if __name__ == '__main__':
 
     # Read the bikeSales csv file, if it exists
-    filename = '..\BikeSalesData-v2.csv'
+    #filename = '..\BikeSalesData-v2.csv'
+    filename = '..\BikeSalesData-Road.csv'
     try:
         df = pd.read_csv(filename, sep=',')
         dict = df.to_dict()
@@ -438,7 +439,7 @@ if __name__ == '__main__':
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
-        #if category_idx < 2:   # 2: Racing
+        #if category_idx != 3:   # 2: Racing
         #    continue
 
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
@@ -474,7 +475,7 @@ if __name__ == '__main__':
 
         for subtype_idx in range(len(subTypes)):
             
-            #if subtype_idx <= 8:
+            #if subtype_idx != 9:
             #    continue
 
             if subTypes[subtype_idx] != 'None':
