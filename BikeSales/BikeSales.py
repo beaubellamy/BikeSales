@@ -438,9 +438,6 @@ if __name__ == '__main__':
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
-        #if category_idx < 2:   # 2: Racing
-        #    continue
-
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
 
@@ -473,10 +470,7 @@ if __name__ == '__main__':
                         #//*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]/a[1]
 
         for subtype_idx in range(len(subTypes)):
-            
-            #if subtype_idx <= 8:
-            #    continue
-
+                      
             if subTypes[subtype_idx] != 'None':
                 bikeType = subTypes[subtype_idx].text.replace(' ','-')
                 subCategory = bikeType
@@ -548,6 +542,9 @@ if __name__ == '__main__':
                     # need to get the url to click on, or the webelement goes stale after first pass of the loop.
                     bikeModel = modelList[model_idx].text.replace(' ','-')
                     bikeModel = bikeModel.replace('-/-','-')
+                    bikeModel = bikeModel.replace('(','')
+                    bikeModel = bikeModel.replace(')','')
+
                     #bikeModel = bikeModel.replace('--','-')
 
                     time.sleep(2)
