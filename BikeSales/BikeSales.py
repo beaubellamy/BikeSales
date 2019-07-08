@@ -403,6 +403,7 @@ def update_lastSeen(datadict, networkID):
 if __name__ == '__main__':
 
     # Read the bikeSales csv file, if it exists
+#    filename = '..\BikeSalesData-Road.csv'
     filename = '..\BikeSalesData-v2.csv'
     try:
         df = pd.read_csv(filename, sep=',')
@@ -425,19 +426,20 @@ if __name__ == '__main__':
     chromedriver = configdata.chromedriver
     bikesPerPage = 12
     sortedBikes = "https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price"
-    #subtypes = ['adventure-sport','adventure-touring','crusier','naked','scooters','sport-touring','super-motard','super-sport','touring','vintage']
-
+    
     driver = webdriver.Chrome(chromedriver)
     driver.implicitly_wait(30)
 #    driver.manage().timeouts().implicitlyWait()
     driver.get(sortedBikes)
     
-    #biketype = driver.find_elements_by_class_name('heading-summary')
     category_block = driver.find_elements_by_class_name('aspect-navigation-element')
     categoryList = category_block[0].find_elements_by_class_name("facet-visible")
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
+        #if category_idx != 3:
+        #    continue
+
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
 
@@ -446,8 +448,6 @@ if __name__ == '__main__':
         element = categoryList[category_idx].find_element_by_css_selector('a')
         driver.execute_script("arguments[0].click();", element)
 
-        #subtype_xpath = '//*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]'
-        #subTypes = driver.find_elements_by_class_name('aspect')[0].find_elements_by_css_selector('a')
         if not driver.find_elements_by_class_name('aspect-name'):
             subTypes = ['None']
         else:
@@ -461,16 +461,11 @@ if __name__ == '__main__':
                 subTypes[-2].click()
                 subTypes = subTypes[0:-2]
 
-        #biketype[2] # Bike Type
-        #biketype[2].find_elements_by_class_name('facet-visible') # list of bike types
-
-        #selector = retail-nav-component > div.nav-elements > div:nth-child(3) > div.element-selection > div > div > div > div.child-aspects > div.aspect
-        #subtype_xpath = //*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]
-    #    numberOfPages = get_Number_Of_Pages(webdriver=driver, bikesPerPage=bikesPerPage)
-                        #//*[@id="retail-nav-component"]/div[2]/div[3]/div[2]/div/div/div/div[2]/div[1]/a[1]
-
         for subtype_idx in range(len(subTypes)):
                       
+            #if subtype_idx != 9:
+            #    continue
+
             if subTypes[subtype_idx] != 'None':
                 bikeType = subTypes[subtype_idx].text.replace(' ','-')
                 subCategory = bikeType
@@ -490,8 +485,6 @@ if __name__ == '__main__':
             if makeList == None:
                 continue
 
-            #makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
-
             if len(makeList) > 2:
                 if makeList[-2].text == 'view all makes...':
                     makeList[-2].click()
@@ -500,7 +493,7 @@ if __name__ == '__main__':
             # select the make
             # loop
             for makeIdx in range(len(makeList)):
-              
+                               
                 bikeMake = makeList[makeIdx].text.replace(' ','-')
                 time.sleep(2)
                 try:
@@ -512,8 +505,6 @@ if __name__ == '__main__':
                     makeList = try_class_name_selectors(driver, 'aspect', 1-offset)
                     if makeList == None:
                         continue
-
-                    #makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
                     
                     if len(makeList) > 2:
                         if makeList[-2].text == 'view all makes...':
@@ -528,7 +519,6 @@ if __name__ == '__main__':
                 modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
                 if modelList == None:
                     continue
-                #modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
                 
                 if len(modelList) > 2:
                     if modelList[-2].text == 'view all models...':
@@ -536,16 +526,14 @@ if __name__ == '__main__':
                         modelList = modelList[0:-2]
 
                 # loop through models
-                #for model in modelList:
                 for model_idx in range(len(modelList)):
                     
                     # need to get the url to click on, or the webelement goes stale after first pass of the loop.
                     bikeModel = modelList[model_idx].text.replace(' ','-')
                     bikeModel = bikeModel.replace('-/-','-')
+                    bikeModel = bikeModel.replace('/','')
                     bikeModel = bikeModel.replace('(','')
                     bikeModel = bikeModel.replace(')','')
-
-                    #bikeModel = bikeModel.replace('--','-')
 
                     time.sleep(2)
                     try:
@@ -556,31 +544,24 @@ if __name__ == '__main__':
                         continue
                     except seleniumException.ElementClickInterceptedException as e:
                         print ('ElementClickInterceptedException Exception',modelList[model_idx])
-                        time.sleep(5)
-                        modelList[model_idx].click()
-                        #element = modelList[model_idx]
-                        #driver.execute_script("arguments[0].click();", element)
-                    
-
+                        #time.sleep(5)
+                        #modelList[model_idx].click()
+                        continue
                         
 
-
                     print (bikeModel)
-
-                    #"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/"+bikeModel+"/?Sort=Price"
 
                     try:
                         time.sleep(5)
                         numberOfPages = int(int(driver.find_elements_by_class_name('title')[1].text.split()[0])/12)
-                    except seleniumException as e:
+                        
+                    except Exception as e:
                         continue
 
                     # loop through the bikes
                     for pageId in range(numberOfPages+1):
    
                         # Generalise the link to all the pages
-                        #pageUrl = sortedBikes+"&offset="+str(pageId*bikesPerPage)
-                        #pageUrl = "https://www.bikesales.com.au/bikes/road/"+subtype+"-subtype/?Sort=Price&offset="+str(pageId*bikesPerPage)
                         pageUrl = "https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/"+bikeMake+"/"+bikeModel+"/?Sort=Price&offset="+str(pageId*bikesPerPage)
 
 
@@ -622,9 +603,6 @@ if __name__ == '__main__':
                                 print ("Timeout exception: ",bike)
                                 continue
 
-
-
-
                             try:
                                 driver.find_element_by_tag_name('h1')
                                 # Try again if the connection failed
@@ -646,7 +624,6 @@ if __name__ == '__main__':
                                 continue
 
                             # Details tab
-                            #details = driver.find_element_by_id('details') # try - catch
                             details = try_Details(driver)
                             if (details == None):
                                 continue
@@ -670,11 +647,10 @@ if __name__ == '__main__':
                             valueList.append(description)
 
                             # Specifications
-                            #driver.find_element_by_id('specifications-tab').click()
                             click = try_id_click(driver,'specifications-tab')
                             if (click == None):
                                 continue
-                            #driver.find_element_by_class_name('features-toggle-collapse').click()
+         
                             click = try_class_click(driver,'features-toggle-collapse')
                             if (click == None):
                                 continue
@@ -684,7 +660,6 @@ if __name__ == '__main__':
                             except:
                                 continue
 
-                            #specifications = driver.find_element_by_id('specifications')
                             specifications = try_id(driver,'specifications')
                             if (specifications == None):
                                 continue
@@ -735,12 +710,7 @@ if __name__ == '__main__':
                                 write_Data_File(dictionary=datadict, filename=filename)
                    
                     # reset the model filter
-                    # print ('end of model filter')
-                    #driver.get("https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/"+bikeMake+"/?Sort=Price")
                     driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/"+bikeMake+"/?Sort=Price")
-                    #modelList = driver.find_elements_by_class_name('aspect')[2].find_elements_by_css_selector('a')
-                    #elements = try_class_names(driver,'aspect')
-                    #modelList = elements[2].find_elements_by_css_selector('a')
                     modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
                     if modelList == None:
                         continue
@@ -754,10 +724,8 @@ if __name__ == '__main__':
                 # reset the make filter
                 
                 print ('end of make filter')
-                #driver.get("https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"-subtype/?Sort=Price")
                 driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/?Sort=Price")
                     
-                #makeList = driver.find_elements_by_class_name('aspect')[1].find_elements_by_css_selector('a')
                 makeList = try_class_name_selectors(driver, 'aspect', 1-offset)
                 if makeList == None:
                     continue
@@ -771,10 +739,8 @@ if __name__ == '__main__':
             write_Data_File(dictionary=datadict, filename=filename)
             # reset subtype
             print ('end of subtype filter')
-            #driver.get("https://www.bikesales.com.au/bikes/"+category+"/?Sort=Price")
             driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/?Sort=Price")
                 
-            #subTypes = driver.find_elements_by_class_name('aspect')[0].find_elements_by_css_selector('a')
             subTypes = try_class_name_selectors(driver, 'aspect', 0)
             if subTypes == None:
                     continue
