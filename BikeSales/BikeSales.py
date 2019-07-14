@@ -403,8 +403,8 @@ def update_lastSeen(datadict, networkID):
 if __name__ == '__main__':
 
     # Read the bikeSales csv file, if it exists
-#    filename = '..\BikeSalesData-Road.csv'
-    filename = '..\BikeSalesData-v2.csv'
+    filename = '..\BikeSalesData-Road.csv'
+#    filename = '..\BikeSalesData-v2.csv'
     try:
         df = pd.read_csv(filename, sep=',')
         dict = df.to_dict()
