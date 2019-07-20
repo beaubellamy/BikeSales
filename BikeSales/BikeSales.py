@@ -437,8 +437,8 @@ if __name__ == '__main__':
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
-        if category_idx != 3:
-            continue
+        #if category_idx != 3:
+        #    continue
 
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
@@ -463,8 +463,8 @@ if __name__ == '__main__':
 
         for subtype_idx in range(len(subTypes)):
                       
-            if subtype_idx != 9:
-                continue
+            #if subtype_idx != 9:
+            #    continue
 
             if subTypes[subtype_idx] != 'None':
                 bikeType = subTypes[subtype_idx].text.replace(' ','-')
