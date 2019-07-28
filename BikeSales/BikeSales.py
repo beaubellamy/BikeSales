@@ -403,8 +403,8 @@ def update_lastSeen(datadict, networkID):
 if __name__ == '__main__':
 
     # Read the bikeSales csv file, if it exists
-    filename = '..\BikeSalesData-Road.csv'
-#    filename = '..\BikeSalesData-v2.csv'
+    #filename = '..\BikeSalesData-Road.csv'
+    filename = '..\BikeSalesData-v2.csv'
     try:
         df = pd.read_csv(filename, sep=',')
         dict = df.to_dict()
@@ -511,7 +511,12 @@ if __name__ == '__main__':
                             makeList[-2].click()
                             makeList = makeList[0:-2]
                         time.sleep(2)
-                        makeList[makeIdx].click()
+                        try:
+                            makeList[makeIdx].click()
+                        except seleniumException.ElementNotVisibleException as e:
+                            print ("Error "+e.msg)
+                            print ('Missed ',makeList[makeIdx].text)
+                            continue
 
                 print (bikeMake)
 
