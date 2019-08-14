@@ -437,7 +437,7 @@ if __name__ == '__main__':
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
-        #if category_idx != 3:
+        #if category_idx < 3:
         #    continue
 
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
@@ -463,7 +463,7 @@ if __name__ == '__main__':
 
         for subtype_idx in range(len(subTypes)):
                       
-            #if subtype_idx != 9:
+            #if subtype_idx < 2:
             #    continue
 
             if subTypes[subtype_idx] != 'None':
@@ -471,6 +471,7 @@ if __name__ == '__main__':
                 subCategory = bikeType
                 bikeType = bikeType+'-subtype'
                 print (bikeType)
+
 
                 time.sleep(2)
                 subTypes[subtype_idx].click()
@@ -481,7 +482,7 @@ if __name__ == '__main__':
                 offset = 1
 
             # get the make
-            makeList = try_class_name_selectors(driver, 'aspect', 1-offset)
+            makeList = try_class_name_selectors(driver, 'aspect', 2-offset) ##1
             if makeList == None:
                 continue
 
@@ -494,6 +495,9 @@ if __name__ == '__main__':
             # loop
             for makeIdx in range(len(makeList)):
                                
+                #if makeIdx < 13:
+                #    continue
+
                 bikeMake = makeList[makeIdx].text.replace(' ','-')
                 time.sleep(2)
                 try:
@@ -502,7 +506,7 @@ if __name__ == '__main__':
                     print ("Make Error "+e.msg)
                     print (makeList[makeIdx].text)
                     time.sleep(5)
-                    makeList = try_class_name_selectors(driver, 'aspect', 1-offset)
+                    makeList = try_class_name_selectors(driver, 'aspect', 2-offset) ##1
                     if makeList == None:
                         continue
                     
@@ -513,26 +517,31 @@ if __name__ == '__main__':
                         time.sleep(2)
                         try:
                             makeList[makeIdx].click()
-                        except seleniumException.ElementNotVisibleException as e:
-                            print ("Error "+e.msg)
-                            print ('Missed ',makeList[makeIdx].text)
+                        except: #seleniumException as e:
+                            #print ("Error "+e.msg)
+                            #print ('Missed ',makeList[makeIdx].text)
                             continue
+                except:
+                    continue
 
                 print (bikeMake)
 
                 # Get the model
-                modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
+                modelList = try_class_name_selectors(driver, 'aspect', 2-offset) ##2
                 if modelList == None:
                     continue
                 
                 if len(modelList) > 2:
+                    if modelList[-2].text == 'view all series...':
+                        modelList = try_class_name_selectors(driver, 'aspect', 3-offset)
+                
                     if modelList[-2].text == 'view all models...':
                         modelList[-2].click()
                         modelList = modelList[0:-2]
 
                 # loop through models
                 for model_idx in range(len(modelList)):
-                    
+                                        
                     # need to get the url to click on, or the webelement goes stale after first pass of the loop.
                     bikeModel = modelList[model_idx].text.replace(' ','-')
                     bikeModel = bikeModel.replace('-/-','-')
@@ -540,7 +549,7 @@ if __name__ == '__main__':
                     bikeModel = bikeModel.replace('(','')
                     bikeModel = bikeModel.replace(')','')
 
-                    time.sleep(2)
+                    time.sleep(5)
                     try:
                         modelList[model_idx].click()
                     except seleniumException.ElementNotVisibleException as e:
@@ -552,13 +561,16 @@ if __name__ == '__main__':
                         #time.sleep(5)
                         #modelList[model_idx].click()
                         continue
+                    except:
+                        print (modelList[model_idx].text)
+                        continue
                         
 
                     print (bikeModel)
 
                     try:
                         time.sleep(5)
-                        numberOfPages = int(int(driver.find_elements_by_class_name('title')[1].text.split()[0])/12)
+                        numberOfPages = int(int(driver.find_elements_by_class_name('title')[1].text.split()[0].replace(',',''))/12)
                         
                     except Exception as e:
                         continue
@@ -578,7 +590,6 @@ if __name__ == '__main__':
                         # Get the list of all the bikes on the page
                         bikesInPage = driver.find_elements_by_css_selector('.listing-item.standard')
 
-        
                         bikeLinks = []
                         # Extract the links into a list
                         for bike in bikesInPage:
@@ -600,8 +611,6 @@ if __name__ == '__main__':
                             attempt = 0
                             print (pageId, linkIdx, bike)
                             
-
- 
                             try:   
                                 driver.get(bike)
                             except seleniumException.TimeoutException:
@@ -644,8 +653,10 @@ if __name__ == '__main__':
                                 description = driver.find_element_by_class_name('view-more-target').text
                                 description = ' '.join(description.replace('\n',' ').split())
             
-                            except seleniumException.NoSuchElementException as e:
+                            except: #seleniumException.NoSuchElementException as e:
                                 description = ''
+                            
+
             
 
                             keyList.append('Description')
@@ -716,11 +727,14 @@ if __name__ == '__main__':
                    
                     # reset the model filter
                     driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/"+bikeMake+"/?Sort=Price")
-                    modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
+                    modelList = try_class_name_selectors(driver, 'aspect', 2-offset) ##2
                     if modelList == None:
                         continue
 
                     if len(modelList) > 2:
+                        if modelList[-2].text == 'view all series...':
+                            modelList = try_class_name_selectors(driver, 'aspect', 3-offset)
+                
                         if modelList[-2].text == 'view all models...':
                             modelList[-2].click()
                             modelList = modelList[0:-2]
@@ -731,7 +745,7 @@ if __name__ == '__main__':
                 print ('end of make filter')
                 driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/?Sort=Price")
                     
-                makeList = try_class_name_selectors(driver, 'aspect', 1-offset)
+                makeList = try_class_name_selectors(driver, 'aspect', 2-offset)##2
                 if makeList == None:
                     continue
 
