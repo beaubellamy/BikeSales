@@ -437,8 +437,8 @@ if __name__ == '__main__':
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
-        #if category_idx < 3:
-        #    continue
+        if category_idx < 3:
+            continue
 
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
@@ -463,8 +463,8 @@ if __name__ == '__main__':
 
         for subtype_idx in range(len(subTypes)):
                       
-            #if subtype_idx < 2:
-            #    continue
+            if subtype_idx < 2:
+                continue
 
             if subTypes[subtype_idx] != 'None':
                 bikeType = subTypes[subtype_idx].text.replace(' ','-')
@@ -495,8 +495,8 @@ if __name__ == '__main__':
             # loop
             for makeIdx in range(len(makeList)):
                                
-                #if makeIdx < 13:
-                #    continue
+                if makeIdx < 13:
+                    continue
 
                 bikeMake = makeList[makeIdx].text.replace(' ','-')
                 time.sleep(2)
@@ -541,7 +541,10 @@ if __name__ == '__main__':
 
                 # loop through models
                 for model_idx in range(len(modelList)):
-                                        
+                               
+                    if model_idx < 48:
+                        continue
+
                     # need to get the url to click on, or the webelement goes stale after first pass of the loop.
                     bikeModel = modelList[model_idx].text.replace(' ','-')
                     bikeModel = bikeModel.replace('-/-','-')
@@ -549,18 +552,20 @@ if __name__ == '__main__':
                     bikeModel = bikeModel.replace('(','')
                     bikeModel = bikeModel.replace(')','')
 
-                    time.sleep(5)
+                    time.sleep(2)
                     try:
-                        modelList[model_idx].click()
+                        #modelList[model_idx].click()
+                        driver.get(modelList[model_idx].get_attribute('href'))
+
                     except seleniumException.ElementNotVisibleException as e:
                         print ("Error "+e.msg)
                         print ('Missed ',modelList[model_idx].text)
                         continue
                     except seleniumException.ElementClickInterceptedException as e:
-                        print ('ElementClickInterceptedException Exception',modelList[model_idx])
+                        print (f'ElementClickInterceptedException Exception at [{modelList[model_idx].text}]')
                         #time.sleep(5)
-                        #modelList[model_idx].click()
-                        continue
+                        modelList[model_idx].click()
+                        #continue
                     except:
                         print (modelList[model_idx].text)
                         continue
@@ -570,13 +575,17 @@ if __name__ == '__main__':
 
                     try:
                         time.sleep(5)
-                        numberOfPages = int(int(driver.find_elements_by_class_name('title')[1].text.split()[0].replace(',',''))/12)
+                        numberOfPages = math.ceil(int(driver.find_elements_by_class_name('title')[1].text.split()[0].replace(',',''))/12)
                         
                     except Exception as e:
                         continue
 
+                    if numberOfPages > 100:
+                        print (f'{model_idx}: {modelList[model_idx].text}')
+                        print ('stop')
+
                     # loop through the bikes
-                    for pageId in range(numberOfPages+1):
+                    for pageId in range(numberOfPages):
    
                         # Generalise the link to all the pages
                         pageUrl = "https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/"+bikeMake+"/"+bikeModel+"/?Sort=Price&offset="+str(pageId*bikesPerPage)
@@ -646,6 +655,7 @@ if __name__ == '__main__':
                             # Comments/Description section
                             try:
                                 driver.find_element_by_class_name('view-more').click()
+
                                 description = driver.find_element_by_class_name('view-more-target').text
                                 description = ' '.join(description.replace('\n',' ').split())
                 
@@ -656,9 +666,6 @@ if __name__ == '__main__':
                             except: #seleniumException.NoSuchElementException as e:
                                 description = ''
                             
-
-            
-
                             keyList.append('Description')
                             valueList.append(description)
 
