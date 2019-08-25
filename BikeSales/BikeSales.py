@@ -404,27 +404,56 @@ def get_category_list(driver):
     categoryList = category_block[0].find_elements_by_class_name("facet-visible")
     return categoryList
 
-#def get_subtypes(subTypes):
-#    if len(subTypes) > 2:
-#        if subTypes[-2].text == 'view all...':
-#            subTypes[-2].click()
-#            subTypes = subTypes[0:-2]
-#    return subTypes
+def clean_bikeModel(bike):
+    bike = bike.text.replace(' ','-')
+    bike = bike.replace('-/-','-')
+    bike = bike.replace('/','')
+    bike = bike.replace('(','')
+    bike = bike.replace(')','')
+    return bike
+
+def get_subtypes(driver):
+
+    if not driver.find_elements_by_class_name('aspect-name'):
+        subTypes = ['None']
+    else:
+        subTypes = try_class_name_selectors(driver, 'aspect', 0)
+        # Check validity of the list
+        #testList = []
+        #[testList.append(subTypes[i].text) for i in range(len(subTypes))]
+        #if list(set(testList)) == ['']:
+        #    #subTypes = try_class_name_selectors(driver, 'aspect', 1)
+        #    subTypes = ['None']
+
+    return subTypes
 
 def filter_list(list, filter='subType'):
-    if filter == 'subType':
-        if len(list) > 2:
-            if list[-2].text == 'view all...':
-                list[-2].click()
-                list = list[0:-2]
+    if len(list) > 2:
+        if list[-2].text in ['view all...','view all makes...','view all models...']:
+            list[-2].click()
+            list = list[0:-2]
 
-    elif filter == 'make':
-        if len(list) > 2:
-            if list[-2].text == 'view all makes...':
-                list[-2].click()
-                list = list[0:-2]
-    else:
-        print ('List type has not been defined')
+    #if filter == 'subType':
+    #    if len(list) > 2:
+    #        if list[-2].text == 'view all...':
+    #            list[-2].click()
+    #            list = list[0:-2]
+
+    #elif filter == 'make':
+    #    if len(list) > 2:
+    #        if list[-2].text == 'view all makes...':
+    #            list[-2].click()
+    #            list = list[0:-2]
+
+
+    #elif filter == 'model':
+    #    if len(list) > 2:
+    #        if list[-2].text == 'view all models...':
+    #            list[-2].click()
+    #            list = list[0:-2]
+
+    #else:
+    #    print ('List type has not been defined')
 
     return list
 
@@ -468,7 +497,7 @@ if __name__ == '__main__':
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
-        #if category_idx < 3:
+        #if category_idx < 2:
         #    continue
 
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
@@ -479,10 +508,8 @@ if __name__ == '__main__':
         element = categoryList[category_idx].find_element_by_css_selector('a')
         driver.execute_script("arguments[0].click();", element)
 
-        if not driver.find_elements_by_class_name('aspect-name'):
-            subTypes = ['None']
-        else:
-            subTypes = try_class_name_selectors(driver, 'aspect', 0)
+        subTypes = get_subtypes(driver)
+        # There is no subtype for Racing????
 
         if subTypes == None:
             continue
@@ -495,20 +522,23 @@ if __name__ == '__main__':
 
         for subtype_idx in range(len(subTypes)):
                       
-            #if subtype_idx < 2:
+            #if subtype_idx < 9:
             #    continue
-
+            offset = 0
             if subTypes[subtype_idx] != 'None':
                 bikeType = subTypes[subtype_idx].text.replace(' ','-')
                 subCategory = bikeType
                 bikeType = bikeType+'-subtype'
                 print (bikeType)
 
-
                 time.sleep(2)
                 #subTypes[subtype_idx].click() ###
-                driver.get(subTypes[subtype_idx].get_attribute('href'))
-                offset = 0
+                if category == 'Racing':
+                    bikeType = ''
+                    offset = 1
+                else:
+                    driver.get(subTypes[subtype_idx].get_attribute('href'))
+
             else:               
                 bikeType = ''
                 subCategory = bikeType
@@ -571,13 +601,11 @@ if __name__ == '__main__':
                 if modelList[0].text == '':
                     modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
 
-                if len(modelList) > 2:
-                    #if modelList[-2].text == 'view all series...':
-                    #    modelList = try_class_name_selectors(driver, 'aspect', 3-offset)
-                
-                    if modelList[-2].text == 'view all models...':
-                        modelList[-2].click()
-                        modelList = modelList[0:-2]
+                #if len(modelList) > 2:
+                #    if modelList[-2].text == 'view all models...':
+                #        modelList[-2].click()
+                #        modelList = modelList[0:-2]
+                modelList = filter_list(modelList, filter='model')
 
                 # loop through models
                 for model_idx in range(len(modelList)):
@@ -586,11 +614,12 @@ if __name__ == '__main__':
                     #    continue
 
                     # need to get the url to click on, or the webelement goes stale after first pass of the loop.
-                    bikeModel = modelList[model_idx].text.replace(' ','-')
-                    bikeModel = bikeModel.replace('-/-','-')
-                    bikeModel = bikeModel.replace('/','')
-                    bikeModel = bikeModel.replace('(','')
-                    bikeModel = bikeModel.replace(')','')
+                    #bikeModel = modelList[model_idx].text.replace(' ','-')
+                    #bikeModel = bikeModel.replace('-/-','-')
+                    #bikeModel = bikeModel.replace('/','')
+                    #bikeModel = bikeModel.replace('(','')
+                    #bikeModel = bikeModel.replace(')','')
+                    bikeModel = clean_bikeModel(modelList[model_idx])
 
                     time.sleep(2)
                     try:
@@ -782,13 +811,14 @@ if __name__ == '__main__':
                     if modelList[0].text == '':
                         modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
 
-                    if len(modelList) > 2:
-                        #if modelList[-2].text == 'view all series...':
-                        #    modelList = try_class_name_selectors(driver, 'aspect', 3-offset)
+                    #if len(modelList) > 2:
+                    #    #if modelList[-2].text == 'view all series...':
+                    #    #    modelList = try_class_name_selectors(driver, 'aspect', 3-offset)
                 
-                        if modelList[-2].text == 'view all models...':
-                            modelList[-2].click()
-                            modelList = modelList[0:-2]
+                    #    if modelList[-2].text == 'view all models...':
+                    #        modelList[-2].click()
+                    #        modelList = modelList[0:-2]
+                    modelList = filter_list(modelList, filter='model')
                 
                 write_Data_File(dictionary=datadict, filename=filename)
                 # reset the make filter
@@ -811,7 +841,9 @@ if __name__ == '__main__':
             print ('end of subtype filter')
             driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/?Sort=Price")
                 
-            subTypes = try_class_name_selectors(driver, 'aspect', 0)
+            subTypes = get_subtypes(driver)
+            #subTypes = try_class_name_selectors(driver, 'aspect', 0)
+
             if subTypes == None:
                     continue
 
@@ -820,6 +852,9 @@ if __name__ == '__main__':
             #        subTypes[-2].click()
             #        subTypes = subTypes[0:-2]
             subTypes = filter_list(subTypes, filter='subType')
+            if category == 'Racing':    # i need a better way to do this????
+                bikeType = ''
+                offset = 1
 
         # reset the category
         driver.get(sortedBikes)
