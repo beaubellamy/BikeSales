@@ -47,46 +47,6 @@ def try_Details(element):
 
     return details
 
-#def try_Specifications(element):
-#    idx = 0
-#    while idx < 10:
-#        try:
-#            specifications = element.find_element_by_id('specifications-tab')
-#            specifications.click()
-#            break
-#        except:
-#            print ("Specifications Error: ",sys.exc_info()[0])
-
-#        idx+=1
-#        time.sleep(2)
-
-#        if (idx == 10):
-#            sys.exit("Failed to find the 'specifications-tab' element")
-
-#    return
-
-#def try_Feature_Toggle(driver):
-
-#    idx = 0
-#    while idx < 10:
-#        try:
-#            feature = driver.find_element_by_class_name('features-toggle-collapse')
-#            feature.click()
-#            break
-#        except seleniumException.ElementNotVisibleException as e:
-#            continue
-#        except:
-#            print ("Feature Toggle Error: ",sys.exc_info()[0])
-
-#        idx+=1
-#        time.sleep(2)
-
-#    if (idx == 10):
-#        sys.exit("Failed to find the 'features-toggle-collapse' element")
-
-#    return
-
-
 
 def try_id_click(driver,id_string):
    
@@ -418,45 +378,72 @@ def get_subtypes(driver):
         subTypes = ['None']
     else:
         subTypes = try_class_name_selectors(driver, 'aspect', 0)
-        # Check validity of the list
-        #testList = []
-        #[testList.append(subTypes[i].text) for i in range(len(subTypes))]
-        #if list(set(testList)) == ['']:
-        #    #subTypes = try_class_name_selectors(driver, 'aspect', 1)
-        #    subTypes = ['None']
 
     return subTypes
 
-def filter_list(list, filter='subType'):
+def filter_list(list):
     if len(list) > 2:
         if list[-2].text in ['view all...','view all makes...','view all models...']:
             list[-2].click()
             list = list[0:-2]
 
-    #if filter == 'subType':
-    #    if len(list) > 2:
-    #        if list[-2].text == 'view all...':
-    #            list[-2].click()
-    #            list = list[0:-2]
-
-    #elif filter == 'make':
-    #    if len(list) > 2:
-    #        if list[-2].text == 'view all makes...':
-    #            list[-2].click()
-    #            list = list[0:-2]
-
-
-    #elif filter == 'model':
-    #    if len(list) > 2:
-    #        if list[-2].text == 'view all models...':
-    #            list[-2].click()
-    #            list = list[0:-2]
-
-    #else:
-    #    print ('List type has not been defined')
-
     return list
 
+def goToBikeMake(driver, makeList, makeIdx, offset):
+    time.sleep(2)
+    try:
+        driver.get(makeList[makeIdx].get_attribute('href'))
+    except seleniumException.ElementNotVisibleException as e:
+        print ("Make Error "+e.msg)
+        print (makeList[makeIdx].text)
+        time.sleep(5)
+        makeList = try_class_name_selectors(driver, 'aspect', 2-offset) ##1
+        if makeList == None:
+            return None
+                    
+        if len(makeList) > 2:
+            makeList = filter_list(makeList)
+            time.sleep(2)
+            try:
+                driver.get(makeList[makeIdx].get_attribute('href'))
+            except:
+                return None
+    except:
+        return None
+
+    return makeList
+
+def getModelList(driver, offset):
+    modelList = try_class_name_selectors(driver, 'aspect', 3-offset) ##2
+    if modelList == None:
+        return None
+
+    if modelList[0].text == '':
+        modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
+
+    modelList = filter_list(modelList)
+    return modelList
+
+def goToBIkeModel(driver, modelSelection):
+    time.sleep(2)
+    try:
+        driver.get(modelSelection.get_attribute('href'))
+
+    except seleniumException.ElementNotVisibleException as e:
+        print ("Error "+e.msg)
+        print ('Missed ',modelSelection.text)
+        return None
+    except seleniumException.ElementClickInterceptedException as e:
+        print (f'ElementClickInterceptedException Exception at [{modelList[model_idx].text}]')
+        driver.get(modelSelection.get_attribute('href'))
+        #continue
+    except:
+        print (modelSelection.text)
+        return None
+
+    return 0 # Succefully completed function
+
+                        
 
 if __name__ == '__main__':
 
@@ -487,43 +474,29 @@ if __name__ == '__main__':
     
     driver = webdriver.Chrome(chromedriver)
     driver.implicitly_wait(30)
-#    driver.manage().timeouts().implicitlyWait()
     driver.get(sortedBikes)
     
-    #category_block = driver.find_elements_by_class_name('aspect-navigation-element')
-    #categoryList = category_block[0].find_elements_by_class_name("facet-visible")
     categoryList  = get_category_list(driver)
 
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
-        #if category_idx < 2:
-        #    continue
-
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
 
         time.sleep(5)
-        #categoryList[category_idx].find_element_by_css_selector('a').click()
         element = categoryList[category_idx].find_element_by_css_selector('a')
         driver.execute_script("arguments[0].click();", element)
 
         subTypes = get_subtypes(driver)
-        # There is no subtype for Racing????
 
         if subTypes == None:
             continue
 
-        #if len(subTypes) > 2:
-        #    if subTypes[-2].text == 'view all...':
-        #        subTypes[-2].click()
-        #        subTypes = subTypes[0:-2]
-        subTypes = filter_list(subTypes, filter='subType')
+        subTypes = filter_list(subTypes)
 
         for subtype_idx in range(len(subTypes)):
                       
-            #if subtype_idx < 9:
-            #    continue
             offset = 0
             if subTypes[subtype_idx] != 'None':
                 bikeType = subTypes[subtype_idx].text.replace(' ','-')
@@ -532,7 +505,6 @@ if __name__ == '__main__':
                 print (bikeType)
 
                 time.sleep(2)
-                #subTypes[subtype_idx].click() ###
                 if category == 'Racing':
                     bikeType = ''
                     offset = 1
@@ -549,97 +521,33 @@ if __name__ == '__main__':
             if makeList == None:
                 continue
 
-            #if len(makeList) > 2:
-            #    if makeList[-2].text == 'view all makes...':
-            #        makeList[-2].click()
-            #        makeList = makeList[0:-2]
-            makeList = filter_list(makeList, filter='make')
+            makeList = filter_list(makeList)
 
             # select the make
-            # loop
             for makeIdx in range(len(makeList)):
                                
-                #if makeIdx < 8:
-                #    continue
-
                 bikeMake = makeList[makeIdx].text.replace(' ','-')
-                time.sleep(2)
-                try:
-                    #makeList[makeIdx].click()
-                    driver.get(makeList[makeIdx].get_attribute('href'))
-                except seleniumException.ElementNotVisibleException as e:
-                    print ("Make Error "+e.msg)
-                    print (makeList[makeIdx].text)
-                    time.sleep(5)
-                    makeList = try_class_name_selectors(driver, 'aspect', 2-offset) ##1
-                    if makeList == None:
-                        continue
-                    
-                    if len(makeList) > 2:
-                        #if makeList[-2].text == 'view all makes...':
-                        #    makeList[-2].click()
-                        #    makeList = makeList[0:-2]
-                        makeList = filter_list(makeList, filter='make')
-                        time.sleep(2)
-                        try:
-                            #makeList[makeIdx].click()
-                            driver.get(makeList[makeIdx].get_attribute('href'))
-                        except: #seleniumException as e:
-                            #print ("Error "+e.msg)
-                            #print ('Missed ',makeList[makeIdx].text)
-                            continue
-                except:
+                success = goToBikeMake(driver, makeList, makeIdx, offset)
+                if success == None:
                     continue
 
                 print (f'  {bikeMake}')
 
+                
                 # Get the model
-                modelList = try_class_name_selectors(driver, 'aspect', 3-offset) ##2
+                modelList = getModelList(driver, offset)
                 if modelList == None:
                     continue
 
-                if modelList[0].text == '':
-                    modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
-
-                #if len(modelList) > 2:
-                #    if modelList[-2].text == 'view all models...':
-                #        modelList[-2].click()
-                #        modelList = modelList[0:-2]
-                modelList = filter_list(modelList, filter='model')
-
                 # loop through models
                 for model_idx in range(len(modelList)):
-                               
-                    #if model_idx < 48:
-                    #    continue
-
-                    # need to get the url to click on, or the webelement goes stale after first pass of the loop.
-                    #bikeModel = modelList[model_idx].text.replace(' ','-')
-                    #bikeModel = bikeModel.replace('-/-','-')
-                    #bikeModel = bikeModel.replace('/','')
-                    #bikeModel = bikeModel.replace('(','')
-                    #bikeModel = bikeModel.replace(')','')
+                          
                     bikeModel = clean_bikeModel(modelList[model_idx])
 
-                    time.sleep(2)
-                    try:
-                        #modelList[model_idx].click()
-                        driver.get(modelList[model_idx].get_attribute('href'))
-
-                    except seleniumException.ElementNotVisibleException as e:
-                        print ("Error "+e.msg)
-                        print ('Missed ',modelList[model_idx].text)
+                    #*****************************
+                    success = goToBIkeModel(driver, modelList[model_idx])
+                    if success == None:
                         continue
-                    except seleniumException.ElementClickInterceptedException as e:
-                        print (f'ElementClickInterceptedException Exception at [{modelList[model_idx].text}]')
-                        #time.sleep(5)
-                        #modelList[model_idx].click()
-                        driver.get(modelList[model_idx].get_attribute('href'))
-                        #continue
-                    except:
-                        print (modelList[model_idx].text)
-                        continue
-                        
 
                     print (f'    {bikeModel}')
 
@@ -804,22 +712,10 @@ if __name__ == '__main__':
                    
                     # reset the model filter
                     driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/"+bikeMake+"/?Sort=Price")
-                    modelList = try_class_name_selectors(driver, 'aspect', 3-offset) ##2
+                    modelList = getModelList(driver, offset)
                     if modelList == None:
                         continue
-                    
-                    if modelList[0].text == '':
-                        modelList = try_class_name_selectors(driver, 'aspect', 2-offset)
 
-                    #if len(modelList) > 2:
-                    #    #if modelList[-2].text == 'view all series...':
-                    #    #    modelList = try_class_name_selectors(driver, 'aspect', 3-offset)
-                
-                    #    if modelList[-2].text == 'view all models...':
-                    #        modelList[-2].click()
-                    #        modelList = modelList[0:-2]
-                    modelList = filter_list(modelList, filter='model')
-                
                 write_Data_File(dictionary=datadict, filename=filename)
                 # reset the make filter
                 
@@ -830,11 +726,7 @@ if __name__ == '__main__':
                 if makeList == None:
                     continue
 
-                #if len(makeList) > 2:
-                #    if makeList[-2].text == 'view all makes...':
-                #        makeList[-2].click()
-                #        makeList = makeList[0:-2]                
-                makeList = filter_list(makeList, filter='make')
+                makeList = filter_list(makeList)
                 
             write_Data_File(dictionary=datadict, filename=filename)
             # reset subtype
@@ -842,17 +734,12 @@ if __name__ == '__main__':
             driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/?Sort=Price")
                 
             subTypes = get_subtypes(driver)
-            #subTypes = try_class_name_selectors(driver, 'aspect', 0)
-
+            
             if subTypes == None:
                     continue
 
-            #if len(subTypes) > 2:
-            #    if subTypes[-2].text == 'view all...':
-            #        subTypes[-2].click()
-            #        subTypes = subTypes[0:-2]
-            subTypes = filter_list(subTypes, filter='subType')
-            if category == 'Racing':    # i need a better way to do this????
+            subTypes = filter_list(subTypes)
+            if category == 'Racing': 
                 bikeType = ''
                 offset = 1
 
