@@ -448,7 +448,6 @@ def goToBIkeModel(driver, modelSelection):
 if __name__ == '__main__':
 
     # Read the bikeSales csv file, if it exists
-    #filename = '..\BikeSalesData-Road.csv'
     filename = '..\BikeSalesData-v2.csv'
     try:
         df = pd.read_csv(filename, sep=',')
@@ -544,7 +543,6 @@ if __name__ == '__main__':
                           
                     bikeModel = clean_bikeModel(modelList[model_idx])
 
-                    #*****************************
                     success = goToBIkeModel(driver, modelList[model_idx])
                     if success == None:
                         continue
