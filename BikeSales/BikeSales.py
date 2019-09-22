@@ -2,6 +2,7 @@
 import sys
 import time
 import math
+import random
 from datetime import datetime
 import pandas as pd
 from selenium import webdriver
@@ -49,7 +50,9 @@ def try_Details(element):
 
 
 def try_id_click(driver,id_string):
-   
+
+    robot_check(driver)
+    
     attempt = 0
     while (attempt < max_attempts):
         try:
@@ -69,7 +72,7 @@ def try_id_click(driver,id_string):
     return None
 
 def try_class_click(driver,id_string):
-   
+    robot_check(driver)
     attempt = 0
     while (attempt < max_attempts):
         try:
@@ -89,7 +92,7 @@ def try_class_click(driver,id_string):
     return None
 
 def try_class_names(driver,string):
-   
+    robot_check(driver)
     attempt = 0
     while (attempt < max_attempts):
         try:
@@ -110,7 +113,7 @@ def try_class_names(driver,string):
 
 
 def try_id(driver,id_string):
-   
+    robot_check(driver)
     attempt = 0
     while (attempt < max_attempts):
         try:
@@ -130,6 +133,7 @@ def try_id(driver,id_string):
     return None
 
 def try_get(driver, url):
+    robot_check(driver)
     attempts = 0
 
     while True:
@@ -145,7 +149,7 @@ def try_get(driver, url):
     return driver
 
 def try_class_name_selectors(driver, class_string, index):
-
+    robot_check(driver)
     attempt = 0
     while attempt < 5:
         try:                        
@@ -194,7 +198,7 @@ def get_Specifications(elements):
     keys = []
     values = []
 
-    sub_Titles = ['Audio/Visual Communications','Brakes','Chassis & Suspension','Convenience','Dimensions & Weights',
+    sub_Titles = ['Audio/Visual Communications','Brakes','Chassis & Suspension','Convenience','Dimensions & Weights', 'Details',
                   'Electrics', 'Engine','Fuel & Emissions', 'Instruments & Controls', 'Probationary Plate Status','Safety & Security','Safey & Security',
                   'Start', 'Transmission','Wheels & Tyres','Warranty & Servicing']
     idx = 0
@@ -215,7 +219,7 @@ def get_Location(element):
     """
     Find the location element and extract the values
     """
-
+    robot_check(driver)
     try:
         location = driver.find_element_by_css_selector('.seller-info.seller-location').text
     except seleniumException.NoSuchElementException as e:
@@ -293,7 +297,7 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
 
     return dictionary
 
-def get_Number_Of_Pages(webdriver=None, bikesPerPage=12):
+def get_Number_Of_Pages(driver=None, bikesPerPage=12):
     """
     Get the number of pages that will need to be traversed. This will depend on the number 
     of bikes shown per page.
@@ -304,9 +308,11 @@ def get_Number_Of_Pages(webdriver=None, bikesPerPage=12):
     bikePerPage: (default = 12)
     The number of bikes shown per page.
     """
+    robot_check(driver)
+
     numberOfBikes = bikesPerPage # default value
 
-    elements = webdriver.find_elements_by_class_name('title')
+    elements = driver.find_elements_by_class_name('title')
     for element in elements:
         if ("Motorcycles for Sale" in element.text):
             tokens = element.text.split()
@@ -360,9 +366,16 @@ def update_lastSeen(datadict, networkID):
 
 
 def get_category_list(driver):
+    robot_check(driver)
+
     category_block = driver.find_elements_by_class_name('aspect-navigation-element')
     categoryList = category_block[0].find_elements_by_class_name("facet-visible")
     return categoryList
+
+def robot_check(driver):
+    if driver.find_element_by_tag_name('title').parent.title == 'You have been blocked':
+        print ('Pause here: Captcha check')
+
 
 def clean_bikeModel(bike):
     bike = bike.text.replace(' ','-')
@@ -373,7 +386,7 @@ def clean_bikeModel(bike):
     return bike
 
 def get_subtypes(driver):
-
+    robot_check(driver)
     if not driver.find_elements_by_class_name('aspect-name'):
         subTypes = ['None']
     else:
@@ -390,6 +403,7 @@ def filter_list(list):
     return list
 
 def goToBikeMake(driver, makeList, makeIdx, offset):
+    robot_check(driver)
     time.sleep(2)
     try:
         driver.get(makeList[makeIdx].get_attribute('href'))
@@ -414,6 +428,7 @@ def goToBikeMake(driver, makeList, makeIdx, offset):
     return makeList
 
 def getModelList(driver, offset):
+    robot_check(driver)
     modelList = try_class_name_selectors(driver, 'aspect', 3-offset) ##2
     if modelList == None:
         return None
@@ -424,7 +439,8 @@ def getModelList(driver, offset):
     modelList = filter_list(modelList)
     return modelList
 
-def goToBIkeModel(driver, modelSelection):
+def goToBikeModel(driver, modelSelection):
+    robot_check(driver)
     time.sleep(2)
     try:
         driver.get(modelSelection.get_attribute('href'))
@@ -446,7 +462,6 @@ def goToBIkeModel(driver, modelSelection):
                         
 
 if __name__ == '__main__':
-
     # Read the bikeSales csv file, if it exists
     filename = '..\BikeSalesData-v2.csv'
     try:
@@ -470,12 +485,17 @@ if __name__ == '__main__':
     chromedriver = configdata.chromedriver
     bikesPerPage = 12
     sortedBikes = "https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price"
-    
-    driver = webdriver.Chrome(chromedriver)
+    #from selenium import webdriver
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_argument("--incognito")  
+
+    driver = webdriver.Chrome(chromedriver, chrome_options=chrome_options)
     driver.implicitly_wait(30)
     driver.get(sortedBikes)
     
-    categoryList  = get_category_list(driver)
+    time.sleep(2+2*random.random())
+    robot_check(driver)
+    categoryList = get_category_list(driver)
 
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
@@ -484,6 +504,7 @@ if __name__ == '__main__':
         category = category.replace(' ','-')
 
         time.sleep(5)
+        robot_check(driver)
         element = categoryList[category_idx].find_element_by_css_selector('a')
         driver.execute_script("arguments[0].click();", element)
 
@@ -495,7 +516,7 @@ if __name__ == '__main__':
         subTypes = filter_list(subTypes)
 
         for subtype_idx in range(len(subTypes)):
-                      
+            
             offset = 0
             if subTypes[subtype_idx] != 'None':
                 bikeType = subTypes[subtype_idx].text.replace(' ','-')
@@ -508,6 +529,8 @@ if __name__ == '__main__':
                     bikeType = ''
                     offset = 1
                 else:
+                    time.sleep(2+2*random.random())
+                    robot_check(driver)
                     driver.get(subTypes[subtype_idx].get_attribute('href'))
 
             else:               
@@ -516,6 +539,8 @@ if __name__ == '__main__':
                 offset = 1
 
             # get the make
+            time.sleep(2+2*random.random())
+            robot_check(driver)
             makeList = try_class_name_selectors(driver, 'aspect', 2-offset) ##1
             if makeList == None:
                 continue
@@ -525,6 +550,7 @@ if __name__ == '__main__':
             # select the make
             for makeIdx in range(len(makeList)):
                                
+                time.sleep(2+2*random.random())
                 bikeMake = makeList[makeIdx].text.replace(' ','-')
                 success = goToBikeMake(driver, makeList, makeIdx, offset)
                 if success == None:
@@ -534,16 +560,18 @@ if __name__ == '__main__':
 
                 
                 # Get the model
+                time.sleep(2+2*random.random())
                 modelList = getModelList(driver, offset)
                 if modelList == None:
                     continue
 
                 # loop through models
                 for model_idx in range(len(modelList)):
-                          
+                    # encountered catcha (im not a robot)
                     bikeModel = clean_bikeModel(modelList[model_idx])
 
-                    success = goToBIkeModel(driver, modelList[model_idx])
+                    time.sleep(2+2*random.random())
+                    success = goToBikeModel(driver, modelList[model_idx])
                     if success == None:
                         continue
 
@@ -551,6 +579,7 @@ if __name__ == '__main__':
 
                     try:
                         time.sleep(5)
+                        robot_check(driver)
                         numberOfPages = math.ceil(int(driver.find_elements_by_class_name('title')[1].text.split()[0].replace(',',''))/12)
                         
                     except Exception as e:
@@ -566,7 +595,8 @@ if __name__ == '__main__':
                         # Generalise the link to all the pages
                         pageUrl = "https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/"+bikeMake+"/"+bikeModel+"/?Sort=Price&offset="+str(pageId*bikesPerPage)
 
-
+                        time.sleep(2+10*random.random())
+                        robot_check(driver)
                         try:
                             driver.get(pageUrl)
                         except:
@@ -580,7 +610,6 @@ if __name__ == '__main__':
                         for bike in bikesInPage:
                             link = bike.find_element_by_css_selector('a').get_attribute('href')
                             bikeLinks.append(link)
-
 
                         # Go to each bike link
                         for linkIdx, bike in enumerate(bikeLinks):
@@ -596,6 +625,8 @@ if __name__ == '__main__':
                             attempt = 0
                             print (pageId, linkIdx, bike)
                             
+                            time.sleep(2+2*random.random())
+                            robot_check(driver)
                             try:   
                                 driver.get(bike)
                             except seleniumException.TimeoutException:
@@ -603,6 +634,7 @@ if __name__ == '__main__':
                                 continue
 
                             try:
+                                robot_check(driver)
                                 driver.find_element_by_tag_name('h1')
                                 # Try again if the connection failed
                                 while (attempt < max_attempts and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
@@ -623,11 +655,13 @@ if __name__ == '__main__':
                                 continue
 
                             # Details tab
+                            time.sleep(2+2*random.random())
                             details = try_Details(driver)
                             if (details == None):
                                 continue
                             keyList, valueList = get_Details(details)
             
+                            robot_check(driver)
                             # Comments/Description section
                             try:
                                 driver.find_element_by_class_name('view-more').click()
@@ -646,6 +680,7 @@ if __name__ == '__main__':
                             valueList.append(description)
 
                             # Specifications
+                            time.sleep(2+2*random.random())
                             click = try_id_click(driver,'specifications-tab')
                             if (click == None):
                                 continue
@@ -654,6 +689,7 @@ if __name__ == '__main__':
                             if (click == None):
                                 continue
 
+                            robot_check(driver)
                             try:
                                 wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
                             except:
@@ -708,6 +744,7 @@ if __name__ == '__main__':
                             if (((pageId % 10) == 0) & (linkIdx == len(bikeLinks)-1)):
                                 write_Data_File(dictionary=datadict, filename=filename)
                    
+                    robot_check(driver)
                     # reset the model filter
                     driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/"+bikeMake+"/?Sort=Price")
                     modelList = getModelList(driver, offset)
@@ -718,6 +755,7 @@ if __name__ == '__main__':
                 # reset the make filter
                 
                 print ('  end of make filter')
+                robot_check(driver)
                 driver = try_get(driver,"https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/?Sort=Price")
                     
                 makeList = try_class_name_selectors(driver, 'aspect', 2-offset)##2
@@ -742,11 +780,12 @@ if __name__ == '__main__':
                 offset = 1
 
         # reset the category
+        robot_check(driver)
         driver.get(sortedBikes)
-        category_block = driver.find_elements_by_class_name('aspect-navigation-element')
-        categoryList = category_block[0].find_elements_by_class_name("facet-visible")
-
-
+        categoryList  = get_category_list(driver)
+        #category_block = driver.find_elements_by_class_name('aspect-navigation-element')
+        #categoryList = category_block[0].find_elements_by_class_name("facet-visible")
+            
         # Write the subtype to file
         write_Data_File(dictionary=datadict, filename=filename)
 
