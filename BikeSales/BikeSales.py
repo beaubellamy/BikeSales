@@ -365,12 +365,12 @@ def update_lastSeen(datadict, networkID):
     return datadict
 
 
-def get_category_list(driver):
+def get_filter_list(driver):
     robot_check(driver)
 
-    category_block = driver.find_elements_by_class_name('aspect-navigation-element')
-    categoryList = category_block[0].find_elements_by_class_name("facet-visible")
-    return categoryList
+    filter_block = driver.find_elements_by_class_name('element-selection')
+    filterList = filter_block[0].find_elements_by_class_name("nav-element")
+    return filterList
 
 def robot_check(driver):
     if driver.find_element_by_tag_name('title').parent.title == 'You have been blocked':
@@ -463,24 +463,27 @@ def goToBikeModel(driver, modelSelection):
 
 if __name__ == '__main__':
     # Read the bikeSales csv file, if it exists
-    filename = '..\BikeSalesData-v2.csv'
-    try:
-        df = pd.read_csv(filename, sep=',')
-        dict = df.to_dict()
+    #filename = '..\BikeSalesData-v2.csv'
+    #try:
+    #    df = pd.read_csv(filename, sep=',')
+    #    dict = df.to_dict()
 
-        # Convert the dictionary of dictionary's, to a dictionary of lists.
-        datadict = {}
-        for key in dict.keys():
-            datadict[key] = list(dict[key].values())
+    #    # Convert the dictionary of dictionary's, to a dictionary of lists.
+    #    datadict = {}
+    #    for key in dict.keys():
+    #        datadict[key] = list(dict[key].values())
 
-        # Extract the existing reference codes
-        dictionaryIDs = datadict['Network ID']
+    #    # Extract the existing reference codes
+    #    dictionaryIDs = datadict['Network ID']
 
         
-    except FileNotFoundError:
-        datadict = {}
-        dictionaryIDs = []
-        
+    #except FileNotFoundError:
+    #    datadict = {}
+    #    dictionaryIDs = []
+     
+    datadic = {}
+    dictionaryIDs = []
+
     # Set up the webdriver
     chromedriver = configdata.chromedriver
     bikesPerPage = 12
@@ -492,14 +495,41 @@ if __name__ == '__main__':
     driver = webdriver.Chrome(chromedriver, chrome_options=chrome_options)
     driver.implicitly_wait(30)
     driver.get(sortedBikes)
-    
-    time.sleep(2+2*random.random())
+
+    time.sleep(5+2*random.random())
     robot_check(driver)
-    categoryList = get_category_list(driver)
+    filterList = get_filter_list(driver)
+
+    #----
+    for filter in filterList:
+        if filter.text == 'Bike Type':
+            filter.click()
+            break
+
+    ## get the bike type list (categoryList)
+    categoryList = driver.find_elements_by_class_name('multiselect-facets-item.border-bottom')
+    #BikeType = {'atv-quad': ['agriculture', 'farm', 'fun', 'sport'],
+    #            'dirt-bikes': ['comptetition', 'electric-bikes', 'enduro-2-stroke', 'endure-4-stroke', 'farm', 'fun', 'motorcross-2-stroke', 'motorcross-4-stroke', 'trail', 'trails'],
+    #            'racing': [],
+    #            'road': ['adventure-sport', 'adventure-touring', 'cruiser', 'electric-bikes', 'electric-scooters', 'farm', 'naked', 'scooters', 'sport-touring', 'super-motard', 'super-sport', 'tourig', 'vintage'],
+    #            'sxs-utv': ['agriculture', 'electric', 'fun', 'recreational-utility', 'sport', 'utility']}
+    
+    #----
 
     # loop through the bake categories
     for category_idx in range(len(categoryList)):
         
+        ######
+        # Might be able to reconstruct the web address for each bike type and subtype
+        #https://www.bikesales.com.au/bikes/road/naked-subtype/?sort=Price
+        #https://www.bikesales.com.au/bikes/road/cruiser-subtype/?sort=Price
+        #https://www.bikesales.com.au/bikes/road/adventure-sport-subtype/?sort=Price
+        #
+        #https://www.bikesales.com.au/bikes/dirt-bikes/electric-bikes-subtype/?sort=Price
+        #https://www.bikesales.com.au/bikes/dirt-bikes/enduro-2-stroke-subtype/?sort=Price
+        #https://www.bikesales.com.au/bikes/dirt-bikes/competition-subtype/?sort=Price
+        ######
+
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
 
