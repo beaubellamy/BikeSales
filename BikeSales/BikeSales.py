@@ -10,6 +10,7 @@ from selenium.webdriver.common.keys import Keys
 import selenium.common.exceptions as seleniumException
 from selenium.webdriver.support import expected_conditions # available since 2.26.0
 #import selenium.webdriver.support.Select as Select
+import re
 
 import configdata
 max_attempts = 5
@@ -440,6 +441,7 @@ def getModelList(driver, offset):
     return modelList
 
 def goToBikeModel(driver, modelSelection):
+
     robot_check(driver)
     time.sleep(2)
     try:
@@ -463,72 +465,239 @@ def goToBikeModel(driver, modelSelection):
 
 if __name__ == '__main__':
     # Read the bikeSales csv file, if it exists
-    #filename = '..\BikeSalesData-v2.csv'
-    #try:
-    #    df = pd.read_csv(filename, sep=',')
-    #    dict = df.to_dict()
+    filename = '..\BikeSalesData-2021.csv'
+    try:
+        df = pd.read_csv(filename, sep=',')
+        dict = df.to_dict()
 
-    #    # Convert the dictionary of dictionary's, to a dictionary of lists.
-    #    datadict = {}
-    #    for key in dict.keys():
-    #        datadict[key] = list(dict[key].values())
+        # Convert the dictionary of dictionary's, to a dictionary of lists.
+        datadict = {}
+        for key in dict.keys():
+            datadict[key] = list(dict[key].values())
 
-    #    # Extract the existing reference codes
-    #    dictionaryIDs = datadict['Network ID']
+        # Extract the existing reference codes
+        dictionaryIDs = datadict['Network ID']
 
         
-    #except FileNotFoundError:
-    #    datadict = {}
-    #    dictionaryIDs = []
+    except FileNotFoundError:
+        datadict = {}
+        dictionaryIDs = []
      
-    datadic = {}
-    dictionaryIDs = []
-
+    
     # Set up the webdriver
     chromedriver = configdata.chromedriver
     bikesPerPage = 12
-    sortedBikes = "https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price"
+    base_url = 'https://www.bikesales.com.au/bikes'
+    sortedBikes = 'https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price'
     #from selenium import webdriver
     chrome_options = webdriver.ChromeOptions()
     chrome_options.add_argument("--incognito")  
 
     driver = webdriver.Chrome(chromedriver, chrome_options=chrome_options)
     driver.implicitly_wait(30)
-    driver.get(sortedBikes)
+    #driver.get(sortedBikes)
 
     time.sleep(5+2*random.random())
-    robot_check(driver)
-    filterList = get_filter_list(driver)
+    #robot_check(driver)
+    #filterList = get_filter_list(driver)
 
     #----
-    for filter in filterList:
-        if filter.text == 'Bike Type':
-            filter.click()
-            break
+    #for filter in filterList:
+    #    if filter.text == 'Bike Type':
+    #        filter.click()
+    #        break
 
-    ## get the bike type list (categoryList)
-    categoryList = driver.find_elements_by_class_name('multiselect-facets-item.border-bottom')
-    #BikeType = {'atv-quad': ['agriculture', 'farm', 'fun', 'sport'],
-    #            'dirt-bikes': ['comptetition', 'electric-bikes', 'enduro-2-stroke', 'endure-4-stroke', 'farm', 'fun', 'motorcross-2-stroke', 'motorcross-4-stroke', 'trail', 'trails'],
-    #            'racing': [],
-    #            'road': ['adventure-sport', 'adventure-touring', 'cruiser', 'electric-bikes', 'electric-scooters', 'farm', 'naked', 'scooters', 'sport-touring', 'super-motard', 'super-sport', 'tourig', 'vintage'],
-    #            'sxs-utv': ['agriculture', 'electric', 'fun', 'recreational-utility', 'sport', 'utility']}
-    
+    ## get the bike type list (categoryList) from the popup window.
+    #categoryList = driver.find_elements_by_class_name('multiselect-facets-item.border-bottom')
+
+    bikeType = {'atv-quad': ['agriculture', 'electric', 'farm', 'fun', 'sport'],
+                'dirt-bikes': ['comptetition', 'electric-bikes', 'enduro-2-stroke', 'endure-4-stroke', 'farm', 'fun', 'motorcross-2-stroke', 'motorcross-4-stroke', 'trail', 'trails'],
+                'racing': [],
+                'road': ['adventure-sport', 'adventure-touring', 'cruiser', 'electric-bikes', 'electric-scooters', 
+                         'farm', 'naked', 'scooters', 'sport-touring', 'super-motard', 'super-sport', 'tourig', 'vintage'],
+                'sxs-utv': ['agriculture', 'electric', 'fun', 'recreational-utility', 'sport', 'utility']}
+    makeList = ['adly', 'aeon', 'american-ironhorse', 'aprilia', 'ariel', 'atk', 
+                 'baroni', 'benelli', 'benzhou', 'beta', 'big-bear-choppers', 'big-dog', 'bimota', 'bmw', 'bobber', 
+                 'bolwell-scoota', 'boom-trike', 'braaap', 'brough-superior', 'bsa', 'buell', 'bultaco', 
+                 'cafe-racer', 'cagiva', 'can-am', 'ccm', 'cfmoto', 'chopper', 'confederate', 
+                 'daelim', 'derbi', 'deus-ex-machina', 'ducati', 
+                 'ebr-erik-buell-racing', 'emd-scooters', 'emos', 'evoke', 'exile', 
+                 'fantic', 'fonzarelli', 
+                 'gas-gas', 'gilera', 
+                 'harley-davidson', 'hercules', 'honda', 'hunter-scooter', 'husaberg', 'husqvarna', 'hyosung', 
+                 'ikonik', 'indian', 
+                 'jawa', 'jiajue', 
+                 'kandi', 'kawasaki', 'ktm', 'kymco', 
+                 'lambretta', 'landboss', 'laro', 'laverda', 'linhai', 'lml-scooter', 
+                 'manhattan', 'mci', 'montesa', 'moto-guzzi', 'moto-morini', 'motobi', 'mutt', 'mv-agusta', 
+                 'norton', 
+                 'odes', 'oz-trike', 
+                 'peugeot', 'piaggio', 'pista', 'pit-bike', 'polaris', 
+                 'rieju', 'royal-enfield', 
+                 'scootarelli', 'scorpion-trikes', 'segway', 'service', 'sherco', 'sol-invictus-motorcycle-co.', 
+                 'super-soco', 'suzuki', 'swm', 'sym', 'tgb', 
+                 'titan', 'tonelli', 'torino', 'touro', 'trike', 'triumph', 
+                 'ural', 
+                 'vectrix', 'velocette', 'vespa', 'victory', 'vmoto', 
+                 'walt-siegal-motorcycles', 
+                 'yamaha', 'ycf', 
+                 'zero', 'znen', 'zoot']
+    makeList = ['can-am']
     #----
 
     # loop through the bake categories
-    for category_idx in range(len(categoryList)):
+    #for category_idx in range(len(categoryList)):
         
-        ######
-        # Might be able to reconstruct the web address for each bike type and subtype
-        #https://www.bikesales.com.au/bikes/road/naked-subtype/?sort=Price
-        #https://www.bikesales.com.au/bikes/road/cruiser-subtype/?sort=Price
-        #https://www.bikesales.com.au/bikes/road/adventure-sport-subtype/?sort=Price
-        #
-        #https://www.bikesales.com.au/bikes/dirt-bikes/electric-bikes-subtype/?sort=Price
-        #https://www.bikesales.com.au/bikes/dirt-bikes/enduro-2-stroke-subtype/?sort=Price
-        #https://www.bikesales.com.au/bikes/dirt-bikes/competition-subtype/?sort=Price
-        ######
+    ######
+    # Might be able to reconstruct the web address for each bike type and subtype
+    #https://www.bikesales.com.au/bikes/road/naked-subtype/?sort=Price
+    #https://www.bikesales.com.au/bikes/road/cruiser-subtype/?sort=Price
+    #https://www.bikesales.com.au/bikes/road/adventure-sport-subtype/?sort=Price
+    #
+    #https://www.bikesales.com.au/bikes/dirt-bikes/electric-bikes-subtype/?sort=Price
+    #https://www.bikesales.com.au/bikes/dirt-bikes/enduro-2-stroke-subtype/?sort=Price
+    #https://www.bikesales.com.au/bikes/dirt-bikes/competition-subtype/?sort=Price
+
+    #https://www.bikesales.com.au/bikes/atv-quad/agriculture-subtype/can-am/?sort=Price
+    ######
+
+    for type in bikeType.keys():
+
+        for subtype in bikeType[type]:
+            for make in makeList:
+
+                # Build the url
+                url = base_url+'/'+type+'/'+subtype+'-subtype/'+make+'/?sort=Price'
+                print (f'{url}')
+                # go to the url
+                
+                time.sleep(5+2*random.random())
+                driver.get(url)
+                print ('checking for bikes')
+                # Check if we have returned home (base_url) - wrong make, or subtype
+                # check there are bikes available
+                if driver.find_elements_by_class_name('title')[0].text[0] == '0':
+                    continue
+
+                print ('there are some bikes to view')
+                numberOfPages = math.ceil(int(driver.find_elements_by_class_name('title')[0].text.split()[0].replace(',',''))/12)
+
+                if numberOfPages > 100:
+                    print (f'{type}: {subtype} {make}')
+                    print ('stop')
+
+
+                # Loop through each page
+                #for pageId in range(numberOfPages):
+                #    pageUrl = url+'&offset='+str(pageId*bikesPerPage)
+                #    driver.get(pageUrl)
+
+
+                # Get the list of all the bikes on the page
+                bikesInPage = driver.find_elements_by_css_selector('.listing-item.standard')
+
+                bikeLinks = []
+                # Extract the links into a list
+                for bike in bikesInPage:
+                    link = bike.find_element_by_css_selector('a').get_attribute('href')
+                    bikeLinks.append(link)
+
+                if not bikeLinks:
+                    link = driver.find_elements_by_class_name('js-encode-search.view-more.view-more-gallery')[0].get_attribute('href')
+                    bikeLinks.append(link)
+
+                for linkIdx, bike in enumerate(bikeLinks):
+            
+                    networkID = bike.split('/')[6]
+
+                    if networkID in dictionaryIDs:
+                        # Update the advert last seen date
+                        update_lastSeen(datadict, networkID)
+                        # Skip to next iteration
+                        continue
+
+                    attempt = 0
+                    print (linkIdx, bike)
+
+                    try:   
+                        driver.get(bike)
+                    except seleniumException.TimeoutException:
+                        print ("Timeout exception: ",bike)
+                        continue
+
+                    # extract the model of the bike
+                    title = driver.find_element_by_class_name('col-lg-8.col-sm-10').text
+                    ##-----
+                    # Assume year is always the first item
+                    title = title.lower().split()[1:]
+                    title = '-'.join(title)
+                    # find where the make ends in the string
+                    model_idx = title.find(make)+len(make)+1
+                    model = title[model_idx:]
+                    # check if the model year is at the end
+                    make_year = re.findall('[a-zA-Z]{2}\d{2}', model)
+                    if make_year:
+                        model = model[:-5]
+                    model = model.replace('-', ' ')
+
+
+
+                    ##------
+
+                    details = try_Details(driver)
+                    if (details == None):
+                        continue
+                    
+                    keyList, valueList = get_Details(details)
+            
+                    robot_check(driver)
+                    # Comments/Description section
+                    try:
+                        driver.find_element_by_class_name('view-more').click()
+
+                        description = driver.find_element_by_class_name('view-more-target').text
+                        description = ' '.join(description.replace('\n',' ').split())
+                
+                    except seleniumException.ElementNotVisibleException as e:
+                        description = driver.find_element_by_class_name('view-more-target').text
+                        description = ' '.join(description.replace('\n',' ').split())
+            
+                    except: #seleniumException.NoSuchElementException as e:
+                        description = ''
+                            
+                    keyList.append('Description')
+                    valueList.append(description)
+
+                    # Specifications
+                    time.sleep(2+2*random.random())
+                    click = try_id_click(driver,'specifications-tab')
+                    if (click == None):
+                        continue
+         
+                    click = try_class_click(driver,'features-toggle-collapse')
+                    if (click == None):
+                        continue
+
+                    robot_check(driver)
+                    try:
+                        wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
+                    except:
+                        continue
+
+                    specifications = try_id(driver,'specifications')
+                    if (specifications == None):
+                        continue
+                    key, values = get_Specifications(specifications)
+                    keyList += key
+                    valueList += values
+
+                    suburb, state, postcode = get_Location(driver)
+
+                    keyList += ['Suburb', 'State', 'Postcode','Category','SubType', 'Make', 'Model']
+                    valueList += [suburb, state, postcode, type, subtype, make, model]
+def old_funtion():
+
+        base_url+BikeType+subtype+make
 
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
@@ -540,8 +709,8 @@ if __name__ == '__main__':
 
         subTypes = get_subtypes(driver)
 
-        if subTypes == None:
-            continue
+        #if subTypes == None:
+        #    continue
 
         subTypes = filter_list(subTypes)
 
@@ -819,8 +988,8 @@ if __name__ == '__main__':
         # Write the subtype to file
         write_Data_File(dictionary=datadict, filename=filename)
 
-    driver.close()
+    #driver.close()
 
-    write_Data_File(dictionary=datadict, filename=filename)
+    #write_Data_File(dictionary=datadict, filename=filename)
 
     
