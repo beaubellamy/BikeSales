@@ -112,7 +112,8 @@ def try_class_names(driver,string):
             
     return None
 
-
+##\31 e505deed3832c02c96ca5abe70df9ab > div > div.geetest_btn > div.geetest_radar_btn > div.geetest_radar_tip
+#\31 e505deed3832c02c96ca5abe70df9ab > div > div.geetest_btn > div.geetest_radar_btn > div.geetest_radar_tip
 def try_id(driver,id_string):
     robot_check(driver)
     attempt = 0
@@ -252,8 +253,7 @@ def validate_Dictionary_Keys(dictionary={}, list_of_keys=[]):
     Validate all the keys in the dictionary with the new list of keys.
 
     This will add a new key to the dictionary if a new one is encountered, the new key will be 
-    populated with default values for previous occurances. If there is a key in the dictionary, 
-    that does not exist in the new key list, a default value will be used to populate the missing key.
+    populated with default values for previous occurances. 
 
     dictionary: 
     The dictionary that contains the keys to check and which will be updated.
@@ -511,7 +511,8 @@ if __name__ == '__main__':
     #categoryList = driver.find_elements_by_class_name('multiselect-facets-item.border-bottom')
 
     bikeType = {'atv-quad': ['agriculture', 'electric', 'farm', 'fun', 'sport'],
-                'dirt-bikes': ['comptetition', 'electric-bikes', 'enduro-2-stroke', 'endure-4-stroke', 'farm', 'fun', 'motorcross-2-stroke', 'motorcross-4-stroke', 'trail', 'trails'],
+                'dirt-bikes': ['competition', 'electric-bikes', 'enduro-2-stroke', 'enduro-4-stroke', 
+                               'farm', 'fun', 'motorcross-2-stroke', 'motorcross-4-stroke', 'trail', 'trails'],
                 'racing': [],
                 'road': ['adventure-sport', 'adventure-touring', 'cruiser', 'electric-bikes', 'electric-scooters', 
                          'farm', 'naked', 'scooters', 'sport-touring', 'super-motard', 'super-sport', 'tourig', 'vintage'],
@@ -542,7 +543,7 @@ if __name__ == '__main__':
                  'walt-siegal-motorcycles', 
                  'yamaha', 'ycf', 
                  'zero', 'znen', 'zoot']
-    makeList = ['can-am']
+    makeList = ['kawasaki']
     #----
 
     # loop through the bake categories
@@ -574,11 +575,19 @@ if __name__ == '__main__':
                 time.sleep(5+2*random.random())
                 driver.get(url)
                 print ('checking for bikes')
+
+                # create new robot_check
+                #//*[@id="captcha-container"]
+                #test = driver.find_element_by_xpath('/html/body')
+
+
+
+
                 # Check if we have returned home (base_url) - wrong make, or subtype
                 # check there are bikes available
                 if driver.find_elements_by_class_name('title')[0].text[0] == '0':
                     continue
-
+                
                 print ('there are some bikes to view')
                 numberOfPages = math.ceil(int(driver.find_elements_by_class_name('title')[0].text.split()[0].replace(',',''))/12)
 
@@ -588,113 +597,148 @@ if __name__ == '__main__':
 
 
                 # Loop through each page
-                #for pageId in range(numberOfPages):
-                #    pageUrl = url+'&offset='+str(pageId*bikesPerPage)
-                #    driver.get(pageUrl)
+                for pageId in range(numberOfPages):
+                    pageUrl = url+'&offset='+str(pageId*bikesPerPage)
+                    driver.get(pageUrl)
 
 
-                # Get the list of all the bikes on the page
-                bikesInPage = driver.find_elements_by_css_selector('.listing-item.standard')
+                    # Get the list of all the bikes on the page
+                    bikesInPage = driver.find_elements_by_css_selector('.listing-item.standard')
 
-                bikeLinks = []
-                # Extract the links into a list
-                for bike in bikesInPage:
-                    link = bike.find_element_by_css_selector('a').get_attribute('href')
-                    bikeLinks.append(link)
+                    bikeLinks = []
+                    # Extract the links into a list
+                    for bike in bikesInPage:
+                        link = bike.find_element_by_css_selector('a').get_attribute('href')
+                        bikeLinks.append(link)
 
-                if not bikeLinks:
-                    link = driver.find_elements_by_class_name('js-encode-search.view-more.view-more-gallery')[0].get_attribute('href')
-                    bikeLinks.append(link)
+                    if not bikeLinks:
+                        link = driver.find_elements_by_class_name('js-encode-search.view-more.view-more-gallery')[0].get_attribute('href')
+                        bikeLinks.append(link)
 
-                for linkIdx, bike in enumerate(bikeLinks):
+                    for linkIdx, bike in enumerate(bikeLinks):
             
-                    networkID = bike.split('/')[6]
+                        networkID = bike.split('/')[6]
 
-                    if networkID in dictionaryIDs:
+                        if networkID in dictionaryIDs:
+                            # Update the advert last seen date
+                            update_lastSeen(datadict, networkID)
+                            # Skip to next iteration
+                            continue
+
+                        attempt = 0
+                        print (linkIdx, bike)
+
+                        try:   
+                            driver.get(bike)
+                        except seleniumException.TimeoutException:
+                            print ("Timeout exception: ",bike)
+                            continue
+
+                        # extract the model of the bike
+                        title = driver.find_element_by_class_name('col-lg-8.col-sm-10').text
+                        ##-----
+                        # Assume year is always the first item
+                        title = title.lower().split()[1:]
+                        title = '-'.join(title)
+                        # find where the make ends in the string
+                        model_idx = title.find(make)+len(make)+1
+                        model = title[model_idx:]
+                        # check if the model year is at the end
+                        make_year = re.findall('[a-zA-Z]{2}\d{2}', model)
+                        if make_year:
+                            model = model[:-5]
+                        model = model.replace('-', ' ')
+
+
+
+                        ##------
+
+                        details = try_Details(driver)
+                        if (details == None):
+                            continue
+                    
+                        keyList, valueList = get_Details(details)
+            
+                        robot_check(driver)
+                        # Comments/Description section
+                        try:
+                            driver.find_element_by_class_name('view-more').click()
+
+                            description = driver.find_element_by_class_name('view-more-target').text
+                            description = ' '.join(description.replace('\n',' ').split())
+                
+                        except seleniumException.ElementNotVisibleException as e:
+                            description = driver.find_element_by_class_name('view-more-target').text
+                            description = ' '.join(description.replace('\n',' ').split())
+            
+                        except: #seleniumException.NoSuchElementException as e:
+                            description = ''
+                            
+                        keyList.append('Description')
+                        valueList.append(description)
+
+                        # Specifications
+                        time.sleep(2+2*random.random())
+                        click = try_id_click(driver,'specifications-tab')
+                        if (click == None):
+                            continue
+         
+                        click = try_class_click(driver,'features-toggle-collapse')
+                        if (click == None):
+                            continue
+
+                        robot_check(driver)
+                        try:
+                            wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
+                        except:
+                            continue
+
+                        specifications = try_id(driver,'specifications')
+                        if (specifications == None):
+                            continue
+                        key, values = get_Specifications(specifications)
+                        keyList += key
+                        valueList += values
+
+                        suburb, state, postcode = get_Location(driver)
+
+                        keyList += ['Suburb', 'State', 'Postcode','Category','SubType', 'Make', 'Model']
+                        valueList += [suburb, state, postcode, type, subtype, make, model]
+
+                        # Remove the duplicate of Engine Capacity from both lists
+                        if (keyList.count('Engine Capacity') > 1):
+                            removeIdx = keyList.index('Engine Capacity')
+                            del keyList[removeIdx]
+                            del valueList[removeIdx]
+           
+                        # Add the values to the dictionary.
+                        for idx, key in enumerate(keyList):
+                            value = valueList[idx]
+                            if key in list(datadict.keys()):            
+                                datadict[key].append(value)
+                            else: 
+                                datadict[key] = [value]
+
+                        # Add the reference URL to the dictionary
+                        if 'URL' in list(datadict.keys()):          
+                            datadict['URL'].append(bike)
+                        else: 
+                            datadict['URL'] = [bike]
+
+                        # Add the (date of the advert) first seen date
+                        update_firstSeen(datadict, networkID)
                         # Update the advert last seen date
                         update_lastSeen(datadict, networkID)
-                        # Skip to next iteration
-                        continue
+                        keyList += ['URL','First_Seen','Last_Seen']
 
-                    attempt = 0
-                    print (linkIdx, bike)
+                        # Make sure the list for each key is the same length
+                        datadict = validate_Dictionary_Keys(datadict, keyList)
 
-                    try:   
-                        driver.get(bike)
-                    except seleniumException.TimeoutException:
-                        print ("Timeout exception: ",bike)
-                        continue
-
-                    # extract the model of the bike
-                    title = driver.find_element_by_class_name('col-lg-8.col-sm-10').text
-                    ##-----
-                    # Assume year is always the first item
-                    title = title.lower().split()[1:]
-                    title = '-'.join(title)
-                    # find where the make ends in the string
-                    model_idx = title.find(make)+len(make)+1
-                    model = title[model_idx:]
-                    # check if the model year is at the end
-                    make_year = re.findall('[a-zA-Z]{2}\d{2}', model)
-                    if make_year:
-                        model = model[:-5]
-                    model = model.replace('-', ' ')
+                        # Update the file with the last 100 pages of bike data
+                        #if (((pageId % 10) == 0) & (linkIdx == len(bikeLinks)-1)):
+                    write_Data_File(dictionary=datadict, filename=filename) # write to file after each page
 
 
-
-                    ##------
-
-                    details = try_Details(driver)
-                    if (details == None):
-                        continue
-                    
-                    keyList, valueList = get_Details(details)
-            
-                    robot_check(driver)
-                    # Comments/Description section
-                    try:
-                        driver.find_element_by_class_name('view-more').click()
-
-                        description = driver.find_element_by_class_name('view-more-target').text
-                        description = ' '.join(description.replace('\n',' ').split())
-                
-                    except seleniumException.ElementNotVisibleException as e:
-                        description = driver.find_element_by_class_name('view-more-target').text
-                        description = ' '.join(description.replace('\n',' ').split())
-            
-                    except: #seleniumException.NoSuchElementException as e:
-                        description = ''
-                            
-                    keyList.append('Description')
-                    valueList.append(description)
-
-                    # Specifications
-                    time.sleep(2+2*random.random())
-                    click = try_id_click(driver,'specifications-tab')
-                    if (click == None):
-                        continue
-         
-                    click = try_class_click(driver,'features-toggle-collapse')
-                    if (click == None):
-                        continue
-
-                    robot_check(driver)
-                    try:
-                        wait_to_expand = driver.find_element_by_css_selector('.multi-collapse.collapse.show')
-                    except:
-                        continue
-
-                    specifications = try_id(driver,'specifications')
-                    if (specifications == None):
-                        continue
-                    key, values = get_Specifications(specifications)
-                    keyList += key
-                    valueList += values
-
-                    suburb, state, postcode = get_Location(driver)
-
-                    keyList += ['Suburb', 'State', 'Postcode','Category','SubType', 'Make', 'Model']
-                    valueList += [suburb, state, postcode, type, subtype, make, model]
 def old_funtion():
 
         base_url+BikeType+subtype+make
@@ -912,7 +956,6 @@ def old_funtion():
                                 removeIdx = keyList.index('Engine Capacity')
                                 del keyList[removeIdx]
                                 del valueList[removeIdx]
-
            
                             # Add the values to the dictionary.
                             for idx, key in enumerate(keyList):
@@ -924,7 +967,6 @@ def old_funtion():
 
                             # Add the reference URL to the dictionary
                             if 'URL' in list(datadict.keys()):          
-
                                 datadict['URL'].append(bike)
                             else: 
                                 datadict['URL'] = [bike]
