@@ -13,7 +13,8 @@ from selenium.webdriver.support import expected_conditions # available since 2.2
 import re
 
 import configdata
-max_attempts = 5
+MAX_ATTEMPTS = 5
+WAIT_TIME = 30
 
 def get_Element_Names(element):
     return element.find_elements_by_tag_name('th')
@@ -42,7 +43,7 @@ def try_Details(element):
             
 
         attempt += 1
-        time.sleep(2)
+        time.sleep(5)
 
     if (attempt == 10):
         sys.exit("Failed to find the 'details' element")
@@ -55,7 +56,7 @@ def try_id_click(driver,id_string):
     robot_check(driver)
     
     attempt = 0
-    while (attempt < max_attempts):
+    while (attempt < MAX_ATTEMPTS):
         try:
             element = driver.find_element_by_id(id_string).click()
             return 1
@@ -68,14 +69,14 @@ def try_id_click(driver,id_string):
 
         except:
             attempt += 1
-            time.sleep(2)        
+            time.sleep(5)        
             
     return None
 
 def try_class_click(driver,id_string):
     robot_check(driver)
     attempt = 0
-    while (attempt < max_attempts):
+    while (attempt < MAX_ATTEMPTS):
         try:
             element = driver.find_element_by_class_name(id_string).click()
             return 1
@@ -88,14 +89,14 @@ def try_class_click(driver,id_string):
 
         except:
             attempt += 1
-            time.sleep(2)        
+            time.sleep(5)        
             
     return None
 
 def try_class_names(driver,string):
     robot_check(driver)
     attempt = 0
-    while (attempt < max_attempts):
+    while (attempt < MAX_ATTEMPTS):
         try:
             element = driver.find_elements_by_class_name(string)
             return element
@@ -108,7 +109,7 @@ def try_class_names(driver,string):
 
         except:
             attempt += 1
-            time.sleep(2)        
+            time.sleep(5)        
             
     return None
 
@@ -117,7 +118,7 @@ def try_class_names(driver,string):
 def try_id(driver,id_string):
     robot_check(driver)
     attempt = 0
-    while (attempt < max_attempts):
+    while (attempt < MAX_ATTEMPTS):
         try:
             element = driver.find_element_by_id(id_string)
             return element
@@ -130,7 +131,7 @@ def try_id(driver,id_string):
 
         except:
             attempt += 1
-            time.sleep(2)        
+            time.sleep(5)        
             
     return None
 
@@ -374,8 +375,9 @@ def get_filter_list(driver):
     return filterList
 
 def robot_check(driver):
-    if driver.find_element_by_tag_name('title').parent.title == 'You have been blocked':
-        print ('Pause here: Captcha check')
+    if driver.find_element_by_tag_name('title').parent.title == 'You have been blocked' or \
+        driver.title == 'bikesales.com.au':
+        print ('Pause here - captcha')
 
 
 def clean_bikeModel(bike):
@@ -405,7 +407,7 @@ def filter_list(list):
 
 def goToBikeMake(driver, makeList, makeIdx, offset):
     robot_check(driver)
-    time.sleep(2)
+    time.sleep(5)
     try:
         driver.get(makeList[makeIdx].get_attribute('href'))
     except seleniumException.ElementNotVisibleException as e:
@@ -418,7 +420,7 @@ def goToBikeMake(driver, makeList, makeIdx, offset):
                     
         if len(makeList) > 2:
             makeList = filter_list(makeList)
-            time.sleep(2)
+            time.sleep(5)
             try:
                 driver.get(makeList[makeIdx].get_attribute('href'))
             except:
@@ -443,7 +445,7 @@ def getModelList(driver, offset):
 def goToBikeModel(driver, modelSelection):
 
     robot_check(driver)
-    time.sleep(2)
+    time.sleep(5)
     try:
         driver.get(modelSelection.get_attribute('href'))
 
@@ -461,6 +463,27 @@ def goToBikeModel(driver, modelSelection):
 
     return 0 # Succefully completed function
 
+
+def getBikeModel(driver):
+
+    # extract the model of the bike
+    title = driver.find_element_by_class_name('col-lg-8.col-sm-10').text
+    
+    # Assume year is always the first item
+    title = title.lower().split()[1:]
+    title = '-'.join(title)
+
+    # find where the make ends in the string
+    model_idx = title.find(make)+len(make)+1
+    model = title[model_idx:]
+
+    # check if the model year is at the end
+    make_year = re.findall('[a-zA-Z]{2}\d{2}', model)
+    if make_year:
+        model = model[:-5]
+    model = model.replace('-', ' ')
+
+    return model
                         
 
 if __name__ == '__main__':
@@ -497,7 +520,7 @@ if __name__ == '__main__':
     driver.implicitly_wait(30)
     #driver.get(sortedBikes)
 
-    time.sleep(5+2*random.random())
+    time.sleep(WAIT_TIME+2*random.random())
     #robot_check(driver)
     #filterList = get_filter_list(driver)
 
@@ -513,7 +536,7 @@ if __name__ == '__main__':
     bikeType = {'atv-quad': ['agriculture', 'electric', 'farm', 'fun', 'sport'],
                 'dirt-bikes': ['competition', 'electric-bikes', 'enduro-2-stroke', 'enduro-4-stroke', 
                                'farm', 'fun', 'motorcross-2-stroke', 'motorcross-4-stroke', 'trail', 'trails'],
-                'racing': [],
+                #'racing': [],
                 'road': ['adventure-sport', 'adventure-touring', 'cruiser', 'electric-bikes', 'electric-scooters', 
                          'farm', 'naked', 'scooters', 'sport-touring', 'super-motard', 'super-sport', 'tourig', 'vintage'],
                 'sxs-utv': ['agriculture', 'electric', 'fun', 'recreational-utility', 'sport', 'utility']}
@@ -537,13 +560,13 @@ if __name__ == '__main__':
                  'rieju', 'royal-enfield', 
                  'scootarelli', 'scorpion-trikes', 'segway', 'service', 'sherco', 'sol-invictus-motorcycle-co.', 
                  'super-soco', 'suzuki', 'swm', 'sym', 'tgb', 
-                 'titan', 'tonelli', 'torino', 'touro', 'trike', 'triumph', 
+                 'titan', 'tonelli', 'torino', 'touroz', 'trike', 'triumph', 
                  'ural', 
                  'vectrix', 'velocette', 'vespa', 'victory', 'vmoto', 
                  'walt-siegal-motorcycles', 
                  'yamaha', 'ycf', 
                  'zero', 'znen', 'zoot']
-    makeList = ['kawasaki']
+    #makeList = ['kawasaki']
     #----
 
     # loop through the bake categories
@@ -572,16 +595,21 @@ if __name__ == '__main__':
                 print (f'{url}')
                 # go to the url
                 
-                time.sleep(5+2*random.random())
-                driver.get(url)
+                time.sleep(WAIT_TIME+2*random.random())
+                try:   
+                    driver.get(url)
+                except seleniumException.TimeoutException:
+                    print (f'Timeout exception: {url}')
+                    continue
+                except e:
+                    print (e)
+
+                robot_check(driver)
+        
                 print ('checking for bikes')
-
-                # create new robot_check
-                #//*[@id="captcha-container"]
-                #test = driver.find_element_by_xpath('/html/body')
-
-
-
+                
+                if not driver.find_elements_by_class_name('title'):
+                    print ('stop - the next list will be empty')
 
                 # Check if we have returned home (base_url) - wrong make, or subtype
                 # check there are bikes available
@@ -600,7 +628,7 @@ if __name__ == '__main__':
                 for pageId in range(numberOfPages):
                     pageUrl = url+'&offset='+str(pageId*bikesPerPage)
                     driver.get(pageUrl)
-
+                    robot_check(driver)
 
                     # Get the list of all the bikes on the page
                     bikesInPage = driver.find_elements_by_css_selector('.listing-item.standard')
@@ -633,25 +661,9 @@ if __name__ == '__main__':
                         except seleniumException.TimeoutException:
                             print ("Timeout exception: ",bike)
                             continue
+                        robot_check(driver)
 
-                        # extract the model of the bike
-                        title = driver.find_element_by_class_name('col-lg-8.col-sm-10').text
-                        ##-----
-                        # Assume year is always the first item
-                        title = title.lower().split()[1:]
-                        title = '-'.join(title)
-                        # find where the make ends in the string
-                        model_idx = title.find(make)+len(make)+1
-                        model = title[model_idx:]
-                        # check if the model year is at the end
-                        make_year = re.findall('[a-zA-Z]{2}\d{2}', model)
-                        if make_year:
-                            model = model[:-5]
-                        model = model.replace('-', ' ')
-
-
-
-                        ##------
+                        model = getBikeModel(driver)
 
                         details = try_Details(driver)
                         if (details == None):
@@ -678,7 +690,7 @@ if __name__ == '__main__':
                         valueList.append(description)
 
                         # Specifications
-                        time.sleep(2+2*random.random())
+                        time.sleep(10+2*random.random())
                         click = try_id_click(driver,'specifications-tab')
                         if (click == None):
                             continue
@@ -746,7 +758,7 @@ def old_funtion():
         category = categoryList[category_idx].text.split('\n')[0].replace(' & ','-')
         category = category.replace(' ','-')
 
-        time.sleep(5)
+        time.sleep(WAIT_TIME)
         robot_check(driver)
         element = categoryList[category_idx].find_element_by_css_selector('a')
         driver.execute_script("arguments[0].click();", element)
@@ -767,12 +779,12 @@ def old_funtion():
                 bikeType = bikeType+'-subtype'
                 print (bikeType)
 
-                time.sleep(2)
+                time.sleep(WAIT_TIME)
                 if category == 'Racing':
                     bikeType = ''
                     offset = 1
                 else:
-                    time.sleep(2+2*random.random())
+                    time.sleep(WAIT_TIME+2*random.random())
                     robot_check(driver)
                     driver.get(subTypes[subtype_idx].get_attribute('href'))
 
@@ -782,7 +794,7 @@ def old_funtion():
                 offset = 1
 
             # get the make
-            time.sleep(2+2*random.random())
+            time.sleep(WAIT_TIME+2*random.random())
             robot_check(driver)
             makeList = try_class_name_selectors(driver, 'aspect', 2-offset) ##1
             if makeList == None:
@@ -793,7 +805,7 @@ def old_funtion():
             # select the make
             for makeIdx in range(len(makeList)):
                                
-                time.sleep(2+2*random.random())
+                time.sleep(WAIT_TIME+2*random.random())
                 bikeMake = makeList[makeIdx].text.replace(' ','-')
                 success = goToBikeMake(driver, makeList, makeIdx, offset)
                 if success == None:
@@ -803,7 +815,7 @@ def old_funtion():
 
                 
                 # Get the model
-                time.sleep(2+2*random.random())
+                time.sleep(WAIT_TIME+2*random.random())
                 modelList = getModelList(driver, offset)
                 if modelList == None:
                     continue
@@ -813,7 +825,7 @@ def old_funtion():
                     # encountered catcha (im not a robot)
                     bikeModel = clean_bikeModel(modelList[model_idx])
 
-                    time.sleep(2+2*random.random())
+                    time.sleep(WAIT_TIME+2*random.random())
                     success = goToBikeModel(driver, modelList[model_idx])
                     if success == None:
                         continue
@@ -821,7 +833,7 @@ def old_funtion():
                     print (f'    {bikeModel}')
 
                     try:
-                        time.sleep(5)
+                        time.sleep(WAIT_TIME)
                         robot_check(driver)
                         numberOfPages = math.ceil(int(driver.find_elements_by_class_name('title')[1].text.split()[0].replace(',',''))/12)
                         
@@ -838,7 +850,7 @@ def old_funtion():
                         # Generalise the link to all the pages
                         pageUrl = "https://www.bikesales.com.au/bikes/"+category+"/"+bikeType+"/"+bikeMake+"/"+bikeModel+"/?Sort=Price&offset="+str(pageId*bikesPerPage)
 
-                        time.sleep(2+10*random.random())
+                        time.sleep(WAIT_TIME+10*random.random())
                         robot_check(driver)
                         try:
                             driver.get(pageUrl)
@@ -868,7 +880,7 @@ def old_funtion():
                             attempt = 0
                             print (pageId, linkIdx, bike)
                             
-                            time.sleep(2+2*random.random())
+                            time.sleep(WAIT_TIME+2*random.random())
                             robot_check(driver)
                             try:   
                                 driver.get(bike)
@@ -880,7 +892,7 @@ def old_funtion():
                                 robot_check(driver)
                                 driver.find_element_by_tag_name('h1')
                                 # Try again if the connection failed
-                                while (attempt < max_attempts and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
+                                while (attempt < MAX_ATTEMPTS and driver.find_element_by_tag_name('h1').text == 'Access Denied'):
                                     time.sleep(5)
                                     try:   
                                         driver.get(bike)
@@ -898,7 +910,7 @@ def old_funtion():
                                 continue
 
                             # Details tab
-                            time.sleep(2+2*random.random())
+                            time.sleep(WAIT_TIME+2*random.random())
                             details = try_Details(driver)
                             if (details == None):
                                 continue
@@ -923,7 +935,7 @@ def old_funtion():
                             valueList.append(description)
 
                             # Specifications
-                            time.sleep(2+2*random.random())
+                            time.sleep(WAIT_TIME+2*random.random())
                             click = try_id_click(driver,'specifications-tab')
                             if (click == None):
                                 continue
