@@ -1,4 +1,4 @@
-
+import os
 import sys
 import time
 import math
@@ -11,8 +11,11 @@ import selenium.common.exceptions as seleniumException
 from selenium.webdriver.support import expected_conditions # available since 2.26.0
 #import selenium.webdriver.support.Select as Select
 import re
+from webdriver_manager.chrome import ChromeDriverManager
 
-import configdata
+#chrome = 'chromedriver-91.exe'
+
+#import configdata
 MAX_ATTEMPTS = 5
 WAIT_TIME = 30
 
@@ -508,7 +511,11 @@ if __name__ == '__main__':
      
     
     # Set up the webdriver
-    chromedriver = configdata.chromedriver
+    #cur = os.path.dirname(os.path.realpath(__file__))
+    #chromedriver = os.path.join(cur, chrome)
+    chromedriver = webdriver.Chrome(ChromeDriverManager().install())
+
+    #chromedriver = configdata.chromedriver
     bikesPerPage = 12
     base_url = 'https://www.bikesales.com.au/bikes'
     sortedBikes = 'https://www.bikesales.com.au/bikes/?q=Service.Bikesales.&Sort=Price'
