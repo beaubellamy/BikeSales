@@ -756,6 +756,9 @@ if __name__ == '__main__':
                         # Update the file with the last 100 pages of bike data
                         #if (((pageId % 10) == 0) & (linkIdx == len(bikeLinks)-1)):
                     write_Data_File(dictionary=datadict, filename=filename) # write to file after each page
+                    
+            # Write any remaining info to file
+            write_Data_File(dictionary=datadict, filename=filename)
 
 
 def old_funtion():
